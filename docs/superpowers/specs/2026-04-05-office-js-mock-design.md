@@ -483,6 +483,95 @@ describe("custom function add-in", () => {
 });
 ```
 
+## Distribution & Build
+
+### Use Cases
+
+- **Local development (vite dev):** Import the package via `import` in a setup script. The setup script is loaded in `index.html` and is excluded from the production build.
+- **CI/CD pipeline (Gauge + Selenide E2E):** Load the package via CDN (`unpkg` or `jsdelivr`) with `<script type="module">` in a test-only setup script. Use `executeJavascript` from Selenide for assertions (`getCell`, etc.).
+
+### Distribution
+
+- **npm package (ESM only):** Published to npm. CDN access via unpkg/jsdelivr automatically.
+- **No bundler required:** `tsc` output is directly usable via CDN `<script type="module">` because `nodenext` enforces `.js` extensions on all relative imports.
+- **Global registration is the consumer's responsibility.** The package only exports mock objects; consumers set up globals themselves (e.g., `globalThis.Excel = mock.excel`).
+
+### Consumer Setup Example (E2E)
+
+```js
+// setup-mock.js (loaded only during testing, not in production build)
+import { ExcelMock } from "office-js-mock";
+const mock = new ExcelMock();
+globalThis.Excel = mock.excel;
+globalThis.CustomFunctions = mock.customFunctions;
+globalThis.__mock = mock; // for Selenide executeJavascript access
+```
+
+### tsconfig.json
+
+```jsonc
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["esnext"],
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test-d.ts"]
+}
+```
+
+Key changes from previous config:
+- `target`: `ES2020` → `esnext` (no downleveling needed; modern environments only)
+- `module`: `ES2020` → `nodenext` (enforces `.js` extensions on relative imports, ensuring CDN/Node.js/browser compatibility)
+- `moduleResolution`: `bundler` → `nodenext` (paired with `module: "nodenext"`)
+- `lib`: `ES2020` → `esnext` (match target)
+- `exclude` added: test files excluded from build output
+
+### package.json
+
+```jsonc
+{
+  "name": "office-js-mock",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"]
+}
+```
+
+Key changes:
+- `"type": "module"` added: declares ESM package
+- `"exports"` added: explicit entry point with `types` condition first (TypeScript recommended ordering)
+- `"files": ["dist"]` added: only `dist/` is published to npm
+- `"main"` and `"types"` removed: superseded by `exports`
+
+### Source Code Changes
+
+All relative imports in `src/**/*.ts` must have explicit `.js` extensions (required by `nodenext`):
+
+```ts
+// before
+import { CellStorage } from "./cell-storage";
+
+// after
+import { CellStorage } from "./cell-storage.js";
+```
+
+This applies to all source files and test files.
+
 ## Reference Files
 
 - `@types/office-js`: `.references/@types/office-js/index.d.ts`
