@@ -2,8 +2,14 @@
   "name": "office-js-mock",
   "version": "0.1.0",
   "description": "In-memory mock of Excel JavaScript API for testing Excel Add-ins",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
