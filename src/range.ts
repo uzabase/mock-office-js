@@ -111,6 +111,7 @@ export class MockRange {
 
   set values(data: unknown[][]) {
     this.writeQueue.push({ property: "values", data });
+    this.pendingLoads.push(this);
   }
 
   get formulas(): unknown[][] {
@@ -119,6 +120,7 @@ export class MockRange {
 
   set formulas(data: unknown[][]) {
     this.writeQueue.push({ property: "formulas", data });
+    this.pendingLoads.push(this);
   }
 
   get text(): string[][] {
@@ -131,6 +133,7 @@ export class MockRange {
 
   set numberFormat(data: unknown[][]) {
     this.writeQueue.push({ property: "numberFormat", data });
+    this.pendingLoads.push(this);
   }
 
   get address(): string {
