@@ -523,8 +523,7 @@ globalThis.__mock = mock; // for Selenide executeJavascript access
     "esModuleInterop": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.test.ts", "src/**/*.test-d.ts"]
+  "include": ["src/**/*.ts"]
 }
 ```
 
@@ -533,7 +532,12 @@ Key changes from previous config:
 - `module`: `ES2020` → `nodenext` (enforces `.js` extensions on relative imports, ensuring CDN/Node.js/browser compatibility)
 - `moduleResolution`: `bundler` → `nodenext` (paired with `module: "nodenext"`)
 - `lib`: `ES2020` → `esnext` (match target)
-- `exclude` added: test files excluded from build output
+
+Note: Test files live under `tests/`, which is outside `include: ["src/**/*.ts"]`, so no `exclude` is needed.
+
+### tsconfig.test-d.json
+
+No changes required. It extends `tsconfig.json` and inherits the `nodenext` settings. The `.js` extension requirement applies to its included files as well, but since source files will already have `.js` extensions, and test files' imports from `../src/...` will also use `.js` extensions, everything works as-is.
 
 ### package.json
 
@@ -563,11 +567,17 @@ Key changes:
 All relative imports in `src/**/*.ts` must have explicit `.js` extensions (required by `nodenext`):
 
 ```ts
+// source file (e.g., src/excel-mock.ts)
 // before
 import { CellStorage } from "./cell-storage";
-
 // after
 import { CellStorage } from "./cell-storage.js";
+
+// test file (e.g., tests/range.test.ts)
+// before
+import { MockRange } from "../src/range";
+// after
+import { MockRange } from "../src/range.js";
 ```
 
 This applies to all source files and test files.
