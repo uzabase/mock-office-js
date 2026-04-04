@@ -11,9 +11,7 @@ In-memory mock of the Office JavaScript API for testing Office Add-ins.
 npm install office-js-mock
 ```
 
-## Setup
-
-Register the mock objects as globals before running your tests.
+## Usage
 
 ```typescript
 import { ExcelMock } from "office-js-mock";
@@ -22,18 +20,13 @@ const mock = new ExcelMock();
 
 globalThis.Excel = mock.excel;
 globalThis.CustomFunctions = mock.customFunctions;
-```
 
-## Usage
+// Register a custom function
+CustomFunctions.associate("ADD", (a: number, b: number) => a + b);
 
-```typescript
-test("registered custom function returns correct value", async () => {
-  CustomFunctions.associate("ADD", (a: number, b: number) => a + b);
-
-  await mock.setCell("Sheet1", "A1", { formula: "=ADD(1, 2)" });
-
-  expect(mock.getCell("Sheet1", "A1").value).toBe(3);
-});
+// Set a formula and check the result
+await mock.setCell("Sheet1", "A1", { formula: "=ADD(1, 2)" });
+mock.getCell("Sheet1", "A1").value; // 3
 ```
 
 ## API
