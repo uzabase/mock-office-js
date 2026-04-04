@@ -105,20 +105,20 @@ export class MockRange {
 
   // --- Property getters ---
 
-  get values(): unknown[][] {
-    return this.getLoaded("values") as unknown[][];
+  get values(): any[][] {
+    return this.getLoaded("values") as any[][];
   }
 
-  set values(data: unknown[][]) {
+  set values(data: any[][]) {
     this.writeQueue.push({ property: "values", data });
     this.pendingLoads.push(this);
   }
 
-  get formulas(): unknown[][] {
-    return this.getLoaded("formulas") as unknown[][];
+  get formulas(): any[][] {
+    return this.getLoaded("formulas") as any[][];
   }
 
-  set formulas(data: unknown[][]) {
+  set formulas(data: any[][]) {
     this.writeQueue.push({ property: "formulas", data });
     this.pendingLoads.push(this);
   }
@@ -127,11 +127,11 @@ export class MockRange {
     return this.getLoaded("text") as string[][];
   }
 
-  get numberFormat(): unknown[][] {
-    return this.getLoaded("numberFormat") as unknown[][];
+  get numberFormat(): any[][] {
+    return this.getLoaded("numberFormat") as any[][];
   }
 
-  set numberFormat(data: unknown[][]) {
+  set numberFormat(data: any[][]) {
     this.writeQueue.push({ property: "numberFormat", data });
     this.pendingLoads.push(this);
   }
@@ -169,7 +169,7 @@ export class MockRange {
     return new MockRange(this.sheetName, addr, undefined as never, this.pendingLoads);
   }
 
-  clear(): void {
+  clear(_applyTo?: unknown): void {
     this.pendingClear = true;
     this.pendingLoads.push(this);
   }

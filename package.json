@@ -8,7 +8,7 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:typecheck": "vitest typecheck"
+    "test:typecheck": "vitest --typecheck --run"
   },
   "license": "MIT",
   "devDependencies": {
