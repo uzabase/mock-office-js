@@ -4,12 +4,17 @@
 
 A mock library for testing Excel Add-ins without the Excel host. Provides an in-memory implementation of the Excel JavaScript API and CustomFunctions runtime, enabling E2E-style testing of add-in code.
 
+## Principle
+
+**Always match real Excel behavior.** When in doubt, check `@types/office-js` and replicate the real API surface, method signatures, property types, and error behavior.
+
 ## Goals
 
 - Mock `Excel.run()`, `RequestContext`, `Workbook`, `Worksheet`, `Range` with in-memory cell storage
-- Mock `CustomFunctions.associate()` and evaluate registered functions when formulas are set
+- Mock `CustomFunctions.associate()`, `CustomFunctions.Error`, and `CustomFunctions.ErrorCode`
+- Evaluate registered custom functions when formulas are set via `range.formulas`
 - Reproduce `load()` / `sync()` constraints (error on unloaded property access)
-- Support spilling (2D array results expanding to multiple cells)
+- Support spilling (2D array results expanding to multiple cells) with `#SPILL!` error on collision
 - Provide a convenience wrapper (ExcelMock) for test setup and assertions
 
 ## Non-Goals
@@ -34,7 +39,7 @@ ExcelMock (Wrapper - convenience API for tests)
         ├── MockWorksheetCollection
         ├── MockWorksheet
         ├── MockRange
-        ├── MockCustomFunctions.associate()
+        ├── MockCustomFunctions (associate, Error, ErrorCode)
         ├── FormulaParser
         └── CellStorage (in-memory state)
 ```
@@ -49,7 +54,7 @@ office-js-mock/
 ├── src/
 │   ├── index.ts                  # Public API (exports ExcelMock)
 │   ├── excel-mock.ts             # ExcelMock wrapper class
-│   ├── custom-functions-mock.ts  # MockCustomFunctions
+│   ├── custom-functions-mock.ts  # MockCustomFunctions (associate, Error, ErrorCode)
 │   ├── request-context.ts        # MockRequestContext
 │   ├── workbook.ts               # MockWorkbook
 │   ├── worksheet.ts              # MockWorksheet
@@ -69,18 +74,22 @@ Central store for all cell state across all worksheets.
 
 ```typescript
 interface CellState {
-  value: unknown;           // Displayed value
-  formula?: string;         // Formula string (if any)
+  value: unknown;           // Displayed value ("" for empty cells, matching real Excel)
+  formula?: string;         // Formula string (if any; "" for empty cells, matching real Excel)
   spilledFrom?: string;     // Address of the spill origin (for spilled cells)
 }
 
 // Structure: Map<sheetName, Map<address, CellState>>
 ```
 
+**Default cell state:** Uninitialized cells return `{ value: "", formula: "" }` matching real Excel behavior where `Range.values` returns `""` and `Range.formulas` returns `""` for empty cells.
+
 **Write behavior:**
 
-- `range.values = [[...]]`: Stores values directly (no formula).
-- `range.formulas = [[...]]`: Parses the formula, looks up the registered custom function, calls it, and stores both formula and computed value. If the function is not registered, stores `"#NAME?"` as value.
+Writes are queued and executed on `context.sync()`, matching real Excel's batch execution model.
+
+- `range.values = [[...]]`: Queues storing values directly (no formula).
+- `range.formulas = [[...]]`: Queues formula write. On sync, parses the formula, looks up the registered custom function, calls it, and stores both formula and computed value. If the function is not registered, stores `"#NAME?"` as value.
 
 **Spill behavior:**
 
@@ -89,31 +98,40 @@ When a custom function returns a 2D array:
 - Spilled cells: `{ value: array[r][c], spilledFrom: originAddress }`
 - Overwriting or clearing the origin clears all spilled cells.
 
+**Spill collision:** If a spilling formula would write into cells that already contain data, the origin cell gets `value: "#SPILL!"` and no spill occurs. This matches real Excel behavior.
+
+**Overwriting a spilled (non-origin) cell:** If a value is written to a cell that is part of another cell's spill range, the spill origin cell gets `value: "#SPILL!"` and the remaining spill cells are cleared. This matches real Excel behavior.
+
 ### MockRange
 
-Supports the following properties and methods:
+Supports the following properties and methods, matching the real `Excel.Range` API.
 
 **Properties (require `load()` before read):**
 
 | Property | Type | Read | Write | Description |
 |---|---|---|---|---|
-| `values` | `any[][]` | load required | direct | Cell values |
-| `formulas` | `any[][]` | load required | direct (evaluates custom functions) | Formulas |
+| `values` | `any[][]` | load required | direct (queued for sync) | Cell values |
+| `formulas` | `any[][]` | load required | direct (queued for sync, evaluates custom functions) | Formulas in A1-style notation |
 | `address` | `string` | load required | readonly | `"Sheet1!A1:B2"` format |
 | `rowCount` | `number` | load required | readonly | Row count |
 | `columnCount` | `number` | load required | readonly | Column count |
-| `hasSpill` | `boolean` | load required | readonly | Whether the range has spill |
+| `columnIndex` | `number` | load required | readonly | Zero-indexed column of first cell |
+| `rowIndex` | `number` | load required | readonly | Zero-indexed row of first cell |
+| `text` | `string[][]` | load required | readonly | Text representation of values |
+| `numberFormat` | `any[][]` | load required | direct | Number format codes |
+| `hasSpill` | `boolean` | load required | readonly | True if all cells have spill border, false if none, null if mixed |
 
 **Methods:**
 
 | Method | Description |
 |---|---|
-| `load(properties)` | Schedules property loading |
-| `getCell(row, column)` | Returns a new MockRange for a specific cell |
+| `load(properties)` | Schedules property loading. Accepts string (`"values"`, `"values, formulas"`), string array (`["values", "formulas"]`), or object notation. |
+| `getCell(row, column)` | Returns a new MockRange for a specific cell within the range |
+| `clear(applyTo?)` | Clears the range. `applyTo` accepts `"All"` (default), `"Formats"`, `"Contents"`, etc. Clearing a spill origin clears all spilled cells. |
 
 **Address parsing:**
 
-`getRange("A1")`, `getRange("A1:C2")` are parsed to determine the corresponding cells in CellStorage.
+`getRange("A1")`, `getRange("A1:C2")` are parsed to determine the corresponding cells in CellStorage. Multi-letter columns (e.g., `"AA1"`) are supported. Sheet-qualified addresses (e.g., `"'Sheet 1'!A1"`) are supported for sheet names with spaces.
 
 ### load() / sync() Constraints
 
@@ -121,30 +139,45 @@ Strictly reproduces Office.js behavior:
 - Accessing a property without `load()` → throws error
 - Accessing a property after `load()` but before `sync()` → throws error
 - After `load()` + `sync()` → returns the value from CellStorage
+- Writing properties (e.g., `range.formulas = [...]`) does not require load/sync; writes are queued and executed on sync.
 
 ### MockWorkbook / MockWorksheetCollection / MockWorksheet
 
-**Object chain:**
+**Object chain (matches real Excel API):**
 ```
 context.workbook.worksheets.getActiveWorksheet().getRange("A1")
+context.workbook.getSelectedRange()
 ```
 
 **MockWorkbook:**
-- `worksheets`: Returns MockWorksheetCollection
+
+| Method/Property | Description |
+|---|---|
+| `worksheets` | Returns MockWorksheetCollection |
+| `getSelectedRange()` | Returns the currently selected range (this is a Workbook method in real Excel API, NOT Worksheet) |
 
 **MockWorksheetCollection:**
-- `getActiveWorksheet()`: Returns the active worksheet
-- `getItem(name)`: Returns worksheet by name
-- `add(name)`: Adds a new worksheet
+
+| Method | Description |
+|---|---|
+| `getActiveWorksheet()` | Returns the active worksheet |
+| `getItem(name)` | Returns worksheet by name |
+| `add(name)` | Adds a new worksheet |
 
 **MockWorksheet:**
-- `getRange(address)`: Returns MockRange
-- `getSelectedRange()`: Returns the currently selected range
-- `name`: Sheet name (load required)
+
+| Method/Property | Description |
+|---|---|
+| `getRange(address)` | Returns MockRange for the given address |
+| `name` | Sheet name (load required) |
+| `id` | Sheet id (load required) |
 
 **MockRequestContext:**
-- `workbook`: Returns MockWorkbook
-- `sync()`: Resolves all pending load requests
+
+| Method/Property | Description |
+|---|---|
+| `workbook` | Returns MockWorkbook |
+| `sync()` | Executes all queued writes, then resolves all pending load requests |
 
 **Excel.run:**
 ```typescript
@@ -154,23 +187,30 @@ mock.excel.run = async (callback) => {
 };
 ```
 
-**Default state:** One worksheet named "Sheet1", set as active (matches real Excel behavior).
+**Default state:** One worksheet named "Sheet1", set as active (matches real Excel new workbook behavior).
 
 ### MockCustomFunctions
 
-**Methods:**
+**Methods and types:**
 - `associate(id, fn)`: Registers a single function
 - `associate(mappings)`: Registers multiple functions via `{ id: fn }` object
+- `Error`: Class with `code` and optional `message` properties
+- `ErrorCode`: Enum with `invalidValue`, `notAvailable`, `divisionByZero`, `invalidNumber`, `nullReference`, `invalidName`, `invalidReference`
 
-**Function registry:** `Map<string, Function>` — used by CellStorage during formula evaluation.
+**Function registry:** `Map<string, Function>` — function ID lookup is **case-insensitive**, matching real Excel behavior. `associate("ADD", fn)` is matched by formula `=add(1,2)`.
 
 **Invocation:** When evaluating a custom function, the mock constructs an `Invocation` object and passes it as the last argument:
 ```typescript
-const invocation = { address: "Sheet1!B1" };
+const invocation: CustomFunctions.Invocation = {
+  address: "Sheet1!B1",
+  functionName: "GETPRICE",
+};
 const result = await registeredFn(...parsedArgs, invocation);
 ```
 
-Extensible for future `StreamingInvocation` and `CancelableInvocation` support.
+Extensible for future `StreamingInvocation` and `CancelableInvocation` support. The Invocation construction is isolated so additional properties can be added without changing the evaluation flow.
+
+**Namespace-prefixed function names:** Custom functions are typically invoked as `=CONTOSO.ADD(1,2)` with a namespace prefix. The formula parser handles dot-separated names. `associate("CONTOSO.ADD", fn)` matches formula `=CONTOSO.ADD(1,2)`.
 
 ### Formula Parser
 
@@ -203,6 +243,8 @@ interface ArgumentResolver {
 - Unregistered function name → value is `"#NAME?"` (matches real Excel behavior)
 - Parse failure → value is `"#NAME?"`
 
+**Async evaluation:** Custom functions may be async (return a Promise). Formula evaluation uses `await` internally. The wrapper's `setCell` with formula is therefore `async` and returns `Promise<void>`.
+
 ## Wrapper API (ExcelMock)
 
 ```typescript
@@ -212,7 +254,10 @@ class ExcelMock {
   readonly customFunctions: MockCustomFunctions;
 
   // Setup
-  setCell(sheet: string, address: string, value: unknown): void;
+  setCell(sheet: string, address: string, value: unknown): Promise<void>;
+  // When value is a primitive (string, number, boolean), stores it as a plain value.
+  // When value is { formula: string }, parses and evaluates the formula.
+
   setCells(sheet: string, startAddress: string, values: unknown[][]): void;
   setSelectedRange(sheet: string, address: string): void;
   setActiveWorksheet(sheet: string): void;
@@ -224,6 +269,11 @@ class ExcelMock {
 
   // Reset
   reset(): void;
+  // Clears all cell data across all sheets.
+  // Removes added worksheets and restores the default "Sheet1".
+  // Clears the custom function registry.
+  // Resets selected range to undefined.
+  // Resets active worksheet to "Sheet1".
 }
 ```
 
@@ -246,7 +296,7 @@ describe("custom function add-in", () => {
   test("registered function returns correct value", async () => {
     CustomFunctions.associate("ADD", (a: number, b: number) => a + b);
 
-    mock.setCell("Sheet1", "A1", { formula: "=ADD(1, 2)" });
+    await mock.setCell("Sheet1", "A1", { formula: "=ADD(1, 2)" });
 
     expect(mock.getCell("Sheet1", "A1").value).toBe(3);
   });
@@ -257,7 +307,7 @@ describe("custom function add-in", () => {
       [3, 4],
     ]);
 
-    mock.setCell("Sheet1", "B2", { formula: "=MATRIX()" });
+    await mock.setCell("Sheet1", "B2", { formula: "=MATRIX()" });
 
     expect(mock.getCell("Sheet1", "B2").value).toBe(1);
     expect(mock.getCell("Sheet1", "C2").value).toBe(2);
@@ -265,19 +315,30 @@ describe("custom function add-in", () => {
     expect(mock.getCell("Sheet1", "C3").value).toBe(4);
   });
 
+  test("spill collision returns #SPILL! error", async () => {
+    CustomFunctions.associate("MATRIX", () => [
+      [1, 2],
+      [3, 4],
+    ]);
+
+    mock.setCell("Sheet1", "C2", 999);  // obstacle
+    await mock.setCell("Sheet1", "B2", { formula: "=MATRIX()" });
+
+    expect(mock.getCell("Sheet1", "B2").value).toBe("#SPILL!");
+  });
+
   test("task pane writes formula to selected cell via Excel.run", async () => {
     CustomFunctions.associate("DOUBLE", (n: number) => n * 2);
     mock.setCell("Sheet1", "A1", 5);
     mock.setSelectedRange("Sheet1", "B1");
 
-    // Production code: reads A1, writes formula to selected cell
     await Excel.run(async (context) => {
-      const sheet = context.workbook.worksheets.getActiveWorksheet();
-      const source = sheet.getRange("A1");
+      const source = context.workbook.worksheets
+        .getActiveWorksheet().getRange("A1");
       source.load("values");
       await context.sync();
 
-      const selected = sheet.getSelectedRange();
+      const selected = context.workbook.getSelectedRange();
       selected.formulas = [['=DOUBLE(5)']];
       await context.sync();
     });
@@ -287,9 +348,17 @@ describe("custom function add-in", () => {
   });
 
   test("unregistered function returns #NAME? error", async () => {
-    mock.setCell("Sheet1", "A1", { formula: "=UNKNOWN(1)" });
+    await mock.setCell("Sheet1", "A1", { formula: "=UNKNOWN(1)" });
 
     expect(mock.getCell("Sheet1", "A1").value).toBe("#NAME?");
+  });
+
+  test("function name lookup is case-insensitive", async () => {
+    CustomFunctions.associate("ADD", (a: number, b: number) => a + b);
+
+    await mock.setCell("Sheet1", "A1", { formula: "=add(1, 2)" });
+
+    expect(mock.getCell("Sheet1", "A1").value).toBe(3);
   });
 
   test("load/sync constraint is enforced", async () => {
@@ -313,6 +382,25 @@ describe("custom function add-in", () => {
       expect(range.values).toEqual([[42]]);
     });
   });
+
+  test("range.clear() removes cell content and spilled cells", async () => {
+    CustomFunctions.associate("MATRIX", () => [
+      [1, 2],
+      [3, 4],
+    ]);
+
+    await mock.setCell("Sheet1", "B2", { formula: "=MATRIX()" });
+
+    await Excel.run(async (context) => {
+      const range = context.workbook.worksheets
+        .getActiveWorksheet().getRange("B2");
+      range.clear();
+      await context.sync();
+    });
+
+    expect(mock.getCell("Sheet1", "B2").value).toBe("");
+    expect(mock.getCell("Sheet1", "C2").value).toBe("");  // spill cleared
+  });
 });
 ```
 
@@ -322,7 +410,14 @@ describe("custom function add-in", () => {
   - `Excel.Range`: line 38064
   - `Excel.Worksheet`: line 36824
   - `Excel.WorksheetCollection`: line 37445
-  - `Excel.Workbook`: line 36295
+  - `Excel.Workbook`: line 36295 (`getSelectedRange()` at line 36630)
   - `Excel.RequestContext`: line 33103
+  - `Range.clear()`: line 38415
+  - `NameErrorCellValue` (#NAME?): line 31735
+  - `SpillErrorCellValueSubType` (#SPILL!): line 31959
 - `@types/custom-functions-runtime`: `.references/@types/custom-functions-runtime/index.d.ts`
+  - `CustomFunctions.associate()`: line 13
+  - `CustomFunctions.Invocation`: line 47 (`address`, `functionName`, `parameterAddresses`)
+  - `CustomFunctions.Error`: line 30
+  - `CustomFunctions.ErrorCode`: line 132
 - Existing mock library for reference: `.references/office-addin-mock/`
