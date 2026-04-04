@@ -19,10 +19,7 @@ export class MockRequestContext {
   ) {
     this._storage = storage;
     this._evaluator = new FormulaEvaluator(storage, customFunctions);
-    const contextWorksheets = new MockWorksheetCollection(
-      storage,
-      this._pendingLoads,
-    );
+    const contextWorksheets = _worksheets.cloneWithPendingLoads(this._pendingLoads);
     this.workbook = new MockWorkbook(
       storage,
       this._pendingLoads,

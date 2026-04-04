@@ -38,6 +38,21 @@ export class MockWorksheetCollection {
     return sheet;
   }
 
+  cloneWithPendingLoads(pendingLoads: MockRange[]): MockWorksheetCollection {
+    const clone = Object.create(MockWorksheetCollection.prototype) as MockWorksheetCollection;
+    (clone as any)._storage = this._storage;
+    (clone as any)._pendingLoads = pendingLoads;
+    (clone as any)._activeWorksheetName = this._activeWorksheetName;
+    (clone as any)._nextId = this._nextId;
+    // Create new worksheet instances with the new pendingLoads
+    const newWorksheets = new Map<string, MockWorksheet>();
+    for (const [name, ws] of this._worksheets) {
+      newWorksheets.set(name, new MockWorksheet(ws.name, ws.id, this._storage, pendingLoads));
+    }
+    (clone as any)._worksheets = newWorksheets;
+    return clone;
+  }
+
   reset(): void {
     this._worksheets.clear();
     this._nextId = 1;
