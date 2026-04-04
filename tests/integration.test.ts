@@ -1,5 +1,5 @@
 import { describe, expect, test, vi, afterEach, afterAll, beforeAll } from "vitest";
-import { ExcelMock } from "../src/excel-mock";
+import { ExcelMock } from "../src/excel-mock.js";
 
 describe("E2E integration", () => {
   const mock = new ExcelMock();

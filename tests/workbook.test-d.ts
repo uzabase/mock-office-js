@@ -1,8 +1,8 @@
 import { expectTypeOf } from "vitest";
-import { MockWorkbook } from "../src/workbook";
-import { MockWorksheetCollection } from "../src/worksheet-collection";
-import { MockWorksheet } from "../src/worksheet";
-import { MockRange } from "../src/range";
+import { MockWorkbook } from "../src/workbook.js";
+import { MockWorksheetCollection } from "../src/worksheet-collection.js";
+import { MockWorksheet } from "../src/worksheet.js";
+import { MockRange } from "../src/range.js";
 
 declare const mockWorkbook: MockWorkbook;
 declare const mockCollection: MockWorksheetCollection;

@@ -1,8 +1,8 @@
 import { describe, expect, test } from "vitest";
-import { MockWorkbook } from "../src/workbook";
-import { MockWorksheetCollection } from "../src/worksheet-collection";
-import { CellStorage } from "../src/cell-storage";
-import { MockRange } from "../src/range";
+import { MockWorkbook } from "../src/workbook.js";
+import { MockWorksheetCollection } from "../src/worksheet-collection.js";
+import { CellStorage } from "../src/cell-storage.js";
+import { MockRange } from "../src/range.js";
 
 describe("MockWorkbook / MockWorksheetCollection / MockWorksheet", () => {
   function createWorkbook() {

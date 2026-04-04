@@ -1,5 +1,5 @@
 import { expectTypeOf } from "vitest";
-import { MockCustomFunctions } from "../src/custom-functions-mock";
+import { MockCustomFunctions } from "../src/custom-functions-mock.js";
 
 declare const cf: MockCustomFunctions;
 

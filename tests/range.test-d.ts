@@ -1,5 +1,5 @@
 import { expectTypeOf } from "vitest";
-import { MockRange } from "../src/range";
+import { MockRange } from "../src/range.js";
 
 declare const mockRange: MockRange;
 
