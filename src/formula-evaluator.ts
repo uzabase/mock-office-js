@@ -1,6 +1,6 @@
-import { CellStorage } from "./cell-storage";
-import { MockCustomFunctions } from "./custom-functions-mock";
-import { parseFormula } from "./formula-parser";
+import { CellStorage } from "./cell-storage.js";
+import { MockCustomFunctions } from "./custom-functions-mock.js";
+import { parseFormula } from "./formula-parser.js";
 
 export class FormulaEvaluator {
   constructor(

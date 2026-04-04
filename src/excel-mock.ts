@@ -1,10 +1,10 @@
-import { CellStorage, CellState } from "./cell-storage";
-import { MockCustomFunctions } from "./custom-functions-mock";
-import { MockWorksheetCollection } from "./worksheet-collection";
-import { MockRequestContext } from "./request-context";
-import { FormulaEvaluator } from "./formula-evaluator";
-import { parseAddress, cellAddressFromPosition, parseCellAddress } from "./address";
-import { MockRange } from "./range";
+import { CellStorage, CellState } from "./cell-storage.js";
+import { MockCustomFunctions } from "./custom-functions-mock.js";
+import { MockWorksheetCollection } from "./worksheet-collection.js";
+import { MockRequestContext } from "./request-context.js";
+import { FormulaEvaluator } from "./formula-evaluator.js";
+import { parseAddress, cellAddressFromPosition, parseCellAddress } from "./address.js";
+import { MockRange } from "./range.js";
 
 export class ExcelMock {
   private _storage = new CellStorage();

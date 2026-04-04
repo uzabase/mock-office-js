@@ -1,4 +1,4 @@
-import { cellAddressFromPosition, parseCellAddress } from "./address";
+import { cellAddressFromPosition, parseCellAddress } from "./address.js";
 
 export interface CellState {
   value: unknown;

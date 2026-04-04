@@ -1,6 +1,6 @@
-import { CellStorage } from "./cell-storage";
-import { MockWorksheet } from "./worksheet";
-import { MockRange } from "./range";
+import { CellStorage } from "./cell-storage.js";
+import { MockWorksheet } from "./worksheet.js";
+import { MockRange } from "./range.js";
 
 export class MockWorksheetCollection {
   private _worksheets = new Map<string, MockWorksheet>();

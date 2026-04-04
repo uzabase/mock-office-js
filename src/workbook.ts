@@ -1,6 +1,6 @@
-import { CellStorage } from "./cell-storage";
-import { MockWorksheetCollection } from "./worksheet-collection";
-import { MockRange } from "./range";
+import { CellStorage } from "./cell-storage.js";
+import { MockWorksheetCollection } from "./worksheet-collection.js";
+import { MockRange } from "./range.js";
 
 export class MockWorkbook {
   readonly worksheets: MockWorksheetCollection;

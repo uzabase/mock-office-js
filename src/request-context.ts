@@ -1,10 +1,10 @@
-import { CellStorage } from "./cell-storage";
-import { MockCustomFunctions } from "./custom-functions-mock";
-import { MockWorksheetCollection } from "./worksheet-collection";
-import { MockWorkbook } from "./workbook";
-import { MockRange } from "./range";
-import { FormulaEvaluator } from "./formula-evaluator";
-import { cellAddressFromPosition } from "./address";
+import { CellStorage } from "./cell-storage.js";
+import { MockCustomFunctions } from "./custom-functions-mock.js";
+import { MockWorksheetCollection } from "./worksheet-collection.js";
+import { MockWorkbook } from "./workbook.js";
+import { MockRange } from "./range.js";
+import { FormulaEvaluator } from "./formula-evaluator.js";
+import { cellAddressFromPosition } from "./address.js";
 
 export class MockRequestContext {
   readonly workbook: MockWorkbook;

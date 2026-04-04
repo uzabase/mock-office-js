@@ -3,8 +3,8 @@ import {
   cellAddressFromPosition,
   indexToColumnLetter,
   type RangePosition,
-} from "./address";
-import type { CellStorage } from "./cell-storage";
+} from "./address.js";
+import type { CellStorage } from "./cell-storage.js";
 
 type PropertyName =
   | "values"

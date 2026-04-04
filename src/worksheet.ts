@@ -1,5 +1,5 @@
-import { CellStorage } from "./cell-storage";
-import { MockRange } from "./range";
+import { CellStorage } from "./cell-storage.js";
+import { MockRange } from "./range.js";
 
 export class MockWorksheet {
   private _storage: CellStorage;
