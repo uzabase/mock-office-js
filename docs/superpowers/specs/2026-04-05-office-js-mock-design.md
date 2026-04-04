@@ -63,8 +63,87 @@ office-js-mock/
 │   ├── cell-storage.ts           # In-memory cell storage
 │   └── formula-parser.ts         # Formula parsing and evaluation
 └── tests/
+    ├── range.test.ts           # Runtime tests
+    ├── range.test-d.ts         # Type tests (interface conformance)
     └── ...
 ```
+
+### Type Conformance Testing
+
+To ensure mock interfaces match the real Excel API, type tests verify assignability against `@types/office-js` and `@types/custom-functions-runtime`.
+
+**Dependencies:**
+
+```json
+{
+  "devDependencies": {
+    "@types/office-js": "^1.x",
+    "@types/custom-functions-runtime": "^1.x"
+  }
+}
+```
+
+**Separate tsconfig for type tests** (`tsconfig.test-d.json`):
+
+The production code must NOT depend on `@types/office-js` types (the mock provides its own types). Only type test files (`*.test-d.ts`) reference the real types to verify conformance.
+
+```json
+{
+  "extends": "./tsconfig.json",
+  "include": ["tests/**/*.test-d.ts"],
+  "compilerOptions": {
+    "types": ["office-js", "custom-functions-runtime"]
+  }
+}
+```
+
+**Vitest typecheck config:**
+
+```typescript
+// vitest.config.ts
+export default defineConfig({
+  test: {
+    typecheck: {
+      tsconfig: "./tsconfig.test-d.json",
+    },
+  },
+});
+```
+
+**Type test example** (`tests/range.test-d.ts`):
+
+```typescript
+import { expectTypeOf } from "vitest";
+import { MockRange } from "../src/range";
+
+declare const mockRange: MockRange;
+
+type ImplementedRange = Pick<
+  Excel.Range,
+  "values" | "formulas" | "address" | "rowCount" | "columnCount" |
+  "columnIndex" | "rowIndex" | "text" | "numberFormat" | "hasSpill" |
+  "load" | "getCell" | "clear"
+>;
+
+expectTypeOf(mockRange).toMatchTypeOf<ImplementedRange>();
+```
+
+```typescript
+// tests/workbook.test-d.ts
+import { expectTypeOf } from "vitest";
+import { MockWorkbook } from "../src/workbook";
+
+declare const mockWorkbook: MockWorkbook;
+
+type ImplementedWorkbook = Pick<
+  Excel.Workbook,
+  "worksheets" | "getSelectedRange"
+>;
+
+expectTypeOf(mockWorkbook).toMatchTypeOf<ImplementedWorkbook>();
+```
+
+When a new property or method is added to the mock, it must be added to the corresponding `Pick` type. If `@types/office-js` is updated with breaking changes, the type tests fail and signal that the mock needs updating.
 
 ## Core Design
 
