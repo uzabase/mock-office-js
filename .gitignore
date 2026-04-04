@@ -1,3 +1,4 @@
 .references/
+.claude/worktrees/
 node_modules/
 dist/
