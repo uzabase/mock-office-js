@@ -1,7 +1,7 @@
 {
   "name": "office-js-mock",
   "version": "0.1.0",
-  "description": "In-memory mock of Excel JavaScript API for testing Excel Add-ins",
+  "description": "In-memory mock of Office JavaScript API for testing Office Add-ins",
   "type": "module",
   "exports": {
     ".": {
