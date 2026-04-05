@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript 6, tsc (no bundler)
 
-**Spec:** `docs/superpowers/specs/2026-04-05-office-js-mock-design.md` (Distribution & Build section)
+**Spec:** `docs/superpowers/specs/2026-04-05-mock-office-js-design.md` (Distribution & Build section)
 
 ---
 
@@ -21,7 +21,7 @@
 
 ```jsonc
 {
-  "name": "office-js-mock",
+  "name": "mock-office-js",
   "version": "0.1.0",
   "description": "In-memory mock of Excel JavaScript API for testing Excel Add-ins",
   "type": "module",

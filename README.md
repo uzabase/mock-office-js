@@ -1,4 +1,4 @@
-# office-js-mock
+# mock-office-js
 
 In-memory mock of the Office JavaScript API for testing Office Add-ins.
 
@@ -8,13 +8,13 @@ In-memory mock of the Office JavaScript API for testing Office Add-ins.
 ## Install
 
 ```
-npm install office-js-mock
+npm install mock-office-js
 ```
 
 ## Usage
 
 ```typescript
-import { ExcelMock } from "office-js-mock";
+import { ExcelMock } from "mock-office-js";
 
 const mock = new ExcelMock();
 

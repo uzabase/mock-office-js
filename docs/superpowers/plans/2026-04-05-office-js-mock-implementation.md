@@ -1,4 +1,4 @@
-# office-js-mock Implementation Plan
+# mock-office-js Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Vitest (runtime + type tests), `@types/office-js` and `@types/custom-functions-runtime` (devDependencies for type conformance testing)
 
-**Spec:** `docs/superpowers/specs/2026-04-05-office-js-mock-design.md`
+**Spec:** `docs/superpowers/specs/2026-04-05-mock-office-js-design.md`
 
 **Key architectural note:** ExcelMock owns shared CellStorage + MockWorksheetCollection, passed to each MockRequestContext. FormulaEvaluator is a shared utility used by both the wrapper (ExcelMock.setCell) and the core (MockRequestContext.sync). This avoids duplicating formula evaluation logic.
 
@@ -26,7 +26,7 @@
 - [ ] **Step 1: Initialize package.json**
 
 ```bash
-cd /Users/ot07/Development/npm-packages/office-js-mock
+cd /Users/ot07/Development/npm-packages/mock-office-js
 npm init -y
 ```
 
@@ -34,7 +34,7 @@ Then update `package.json`:
 
 ```json
 {
-  "name": "office-js-mock",
+  "name": "mock-office-js",
   "version": "0.1.0",
   "description": "In-memory mock of Excel JavaScript API for testing Excel Add-ins",
   "main": "dist/index.js",

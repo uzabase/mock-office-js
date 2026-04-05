@@ -1,4 +1,4 @@
-# office-js-mock Design Spec
+# mock-office-js Design Spec
 
 ## Overview
 
@@ -50,7 +50,7 @@ ExcelMock (Wrapper - convenience API for tests)
 ### Project Structure
 
 ```
-office-js-mock/
+mock-office-js/
 ├── src/
 │   ├── index.ts                  # Public API (exports ExcelMock)
 │   ├── excel-mock.ts             # ExcelMock wrapper class
@@ -359,7 +359,7 @@ class ExcelMock {
 ## Usage Example
 
 ```typescript
-import { ExcelMock } from "office-js-mock";
+import { ExcelMock } from "mock-office-js";
 
 describe("custom function add-in", () => {
   const mock = new ExcelMock();
@@ -500,7 +500,7 @@ describe("custom function add-in", () => {
 
 ```js
 // setup-mock.js (loaded only during testing, not in production build)
-import { ExcelMock } from "office-js-mock";
+import { ExcelMock } from "mock-office-js";
 const mock = new ExcelMock();
 globalThis.Excel = mock.excel;
 globalThis.CustomFunctions = mock.customFunctions;
@@ -543,7 +543,7 @@ No changes required. It extends `tsconfig.json` and inherits the `nodenext` sett
 
 ```jsonc
 {
-  "name": "office-js-mock",
+  "name": "mock-office-js",
   "version": "0.1.0",
   "type": "module",
   "exports": {

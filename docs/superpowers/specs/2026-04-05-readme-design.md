@@ -2,13 +2,13 @@
 
 ## Overview
 
-Create a compact, user-facing README.md for the `office-js-mock` npm package. The target audience is Office Add-in developers who want to test their add-ins without the Excel host.
+Create a compact, user-facing README.md for the `mock-office-js` npm package. The target audience is Office Add-in developers who want to test their add-ins without the Excel host.
 
 ## Structure
 
 1. **Title + one-line description**
 2. **Warning blockquote** — early development notice with link to Limitations section
-3. **Install** — `npm install office-js-mock`
+3. **Install** — `npm install mock-office-js`
 4. **Setup** — ExcelMock instantiation and global registration (Vitest example)
 5. **Usage** — one basic example: register custom function, set formula, assert value
 6. **API** — ExcelMock method table (setup / assertion / reset)
