@@ -1,5 +1,6 @@
 export class MockCustomFunctions {
   private registry = new Map<string, Function>();
+  private parameterCounts = new Map<string, number>();
 
   associate(
     idOrMappings: string | Record<string, Function>,
@@ -16,6 +17,16 @@ export class MockCustomFunctions {
 
   getFunction(id: string): Function | undefined {
     return this.registry.get(id.toUpperCase());
+  }
+
+  loadMetadata(metadata: { functions: Array<{ id: string; parameters?: Array<unknown> }> }): void {
+    for (const fn of metadata.functions) {
+      this.parameterCounts.set(fn.id.toUpperCase(), fn.parameters?.length ?? 0);
+    }
+  }
+
+  getParameterCount(id: string): number | undefined {
+    return this.parameterCounts.get(id.toUpperCase());
   }
 
   reset(): void {

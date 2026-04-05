@@ -63,4 +63,50 @@ describe("MockCustomFunctions", () => {
     cf.reset();
     expect(cf.getFunction("ADD")).toBeUndefined();
   });
+
+  test("loadMetadata stores parameter count from functions.json", () => {
+    const cf = new MockCustomFunctions();
+    cf.loadMetadata({
+      functions: [
+        {
+          id: "ADD",
+          name: "ADD",
+          parameters: [
+            { name: "first", type: "number" },
+            { name: "second", type: "number" },
+            { name: "third", type: "number", optional: true },
+          ],
+        },
+      ],
+    });
+    expect(cf.getParameterCount("ADD")).toBe(3);
+  });
+
+  test("getParameterCount is case-insensitive", () => {
+    const cf = new MockCustomFunctions();
+    cf.loadMetadata({
+      functions: [
+        { id: "CONTOSO.ADD", name: "CONTOSO.ADD", parameters: [{ name: "a" }] },
+      ],
+    });
+    expect(cf.getParameterCount("contoso.add")).toBe(1);
+  });
+
+  test("reset preserves metadata", () => {
+    const cf = new MockCustomFunctions();
+    cf.loadMetadata({
+      functions: [
+        { id: "ADD", name: "ADD", parameters: [{ name: "a" }, { name: "b" }] },
+      ],
+    });
+    cf.associate("ADD", () => 0);
+    cf.reset();
+    expect(cf.getFunction("ADD")).toBeUndefined();
+    expect(cf.getParameterCount("ADD")).toBe(2);
+  });
+
+  test("getParameterCount returns undefined for unknown function", () => {
+    const cf = new MockCustomFunctions();
+    expect(cf.getParameterCount("UNKNOWN")).toBeUndefined();
+  });
 });
