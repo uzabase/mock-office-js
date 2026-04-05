@@ -24,7 +24,15 @@ export class FormulaEvaluator {
       functionName: parsed.functionName.toUpperCase(),
     };
     try {
-      const result = await fn(...parsed.args, invocation);
+      const paramCount = this._customFunctions.getParameterCount(parsed.functionName);
+      const paddedArgs = [...parsed.args];
+      if (paramCount !== undefined) {
+        while (paddedArgs.length < paramCount) {
+          paddedArgs.push(null);
+        }
+      }
+      paddedArgs.push(invocation);
+      const result = await fn(...paddedArgs);
       if (Array.isArray(result) && Array.isArray(result[0])) {
         this._storage.setFormulaWithSpill(sheet, address, formulaStr, result);
       } else {

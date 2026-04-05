@@ -66,4 +66,144 @@ describe("FormulaEvaluator", () => {
     expect(storage.getCell("Sheet1", "A1").value).toBe("hello");
     expect(storage.getCell("Sheet1", "A1").formula).toBe("");
   });
+
+  test("pads missing args with null when metadata is loaded", async () => {
+    const { evaluator, storage, cf } = createEvaluator();
+    cf.loadMetadata({
+      functions: [
+        {
+          id: "FUNC3",
+          name: "FUNC3",
+          parameters: [{ name: "a" }, { name: "b" }, { name: "c" }],
+        },
+      ],
+    });
+    let receivedArgs: unknown[] = [];
+    cf.associate("FUNC3", (...args: unknown[]) => {
+      receivedArgs = args;
+      return 0;
+    });
+    await evaluator.evaluateAndStore("Sheet1", "A1", "=FUNC3(1, 2)");
+    expect(receivedArgs).toHaveLength(4);
+    expect(receivedArgs[0]).toBe(1);
+    expect(receivedArgs[1]).toBe(2);
+    expect(receivedArgs[2]).toBeNull();
+    expect(receivedArgs[3]).toEqual({
+      address: "Sheet1!A1",
+      functionName: "FUNC3",
+    });
+  });
+
+  test("no padding when all args are provided", async () => {
+    const { evaluator, storage, cf } = createEvaluator();
+    cf.loadMetadata({
+      functions: [
+        {
+          id: "FUNC3",
+          name: "FUNC3",
+          parameters: [{ name: "a" }, { name: "b" }, { name: "c" }],
+        },
+      ],
+    });
+    let receivedArgs: unknown[] = [];
+    cf.associate("FUNC3", (...args: unknown[]) => {
+      receivedArgs = args;
+      return 0;
+    });
+    await evaluator.evaluateAndStore("Sheet1", "A1", "=FUNC3(1, 2, 3)");
+    expect(receivedArgs).toHaveLength(4);
+    expect(receivedArgs[0]).toBe(1);
+    expect(receivedArgs[1]).toBe(2);
+    expect(receivedArgs[2]).toBe(3);
+    expect(receivedArgs[3]).toEqual({
+      address: "Sheet1!A1",
+      functionName: "FUNC3",
+    });
+  });
+
+  test("no padding when no metadata is loaded", async () => {
+    const { evaluator, storage, cf } = createEvaluator();
+    let receivedArgs: unknown[] = [];
+    cf.associate("FUNC3", (...args: unknown[]) => {
+      receivedArgs = args;
+      return 0;
+    });
+    await evaluator.evaluateAndStore("Sheet1", "A1", "=FUNC3(1, 2)");
+    expect(receivedArgs).toHaveLength(3);
+    expect(receivedArgs[0]).toBe(1);
+    expect(receivedArgs[1]).toBe(2);
+    expect(receivedArgs[2]).toEqual({
+      address: "Sheet1!A1",
+      functionName: "FUNC3",
+    });
+  });
+
+  test("pads all args to null when called with zero args", async () => {
+    const { evaluator, storage, cf } = createEvaluator();
+    cf.loadMetadata({
+      functions: [
+        {
+          id: "FUNC2",
+          name: "FUNC2",
+          parameters: [{ name: "a" }, { name: "b" }],
+        },
+      ],
+    });
+    let receivedArgs: unknown[] = [];
+    cf.associate("FUNC2", (...args: unknown[]) => {
+      receivedArgs = args;
+      return 0;
+    });
+    await evaluator.evaluateAndStore("Sheet1", "A1", "=FUNC2()");
+    expect(receivedArgs).toHaveLength(3);
+    expect(receivedArgs[0]).toBeNull();
+    expect(receivedArgs[1]).toBeNull();
+    expect(receivedArgs[2]).toEqual({
+      address: "Sheet1!A1",
+      functionName: "FUNC2",
+    });
+  });
+
+  test("does not truncate when more args provided than metadata param count", async () => {
+    const { evaluator, storage, cf } = createEvaluator();
+    cf.loadMetadata({
+      functions: [
+        {
+          id: "FUNC2",
+          name: "FUNC2",
+          parameters: [{ name: "a" }, { name: "b" }],
+        },
+      ],
+    });
+    let receivedArgs: unknown[] = [];
+    cf.associate("FUNC2", (...args: unknown[]) => {
+      receivedArgs = args;
+      return 0;
+    });
+    await evaluator.evaluateAndStore("Sheet1", "A1", "=FUNC2(1, 2, 3)");
+    expect(receivedArgs).toHaveLength(4);
+    expect(receivedArgs[0]).toBe(1);
+    expect(receivedArgs[1]).toBe(2);
+    expect(receivedArgs[2]).toBe(3);
+  });
+
+  test("function with zero parameters in metadata only receives invocation", async () => {
+    const { evaluator, storage, cf } = createEvaluator();
+    cf.loadMetadata({
+      functions: [
+        { id: "NOPARAM", name: "NOPARAM", parameters: [] },
+      ],
+    });
+    let receivedArgs: unknown[] = [];
+    cf.associate("NOPARAM", (...args: unknown[]) => {
+      receivedArgs = args;
+      return 42;
+    });
+    await evaluator.evaluateAndStore("Sheet1", "A1", "=NOPARAM()");
+    expect(receivedArgs).toHaveLength(1);
+    expect(receivedArgs[0]).toEqual({
+      address: "Sheet1!A1",
+      functionName: "NOPARAM",
+    });
+  });
 });
