@@ -59,13 +59,22 @@ Standard Office Add-in custom functions metadata:
 }
 ```
 
+### Options Type
+
+```ts
+interface ExcelMockOptions {
+  functionsMetadataUrl: string;
+}
+```
+
 ### Internal Flow
 
-1. `ExcelMock.create()` fetches the URL and parses the JSON
+1. `ExcelMock.create()` uses `fetch()` to load the URL and parses the JSON
 2. Parameter counts are stored in `MockCustomFunctions` (keyed by function ID, uppercased)
 3. `FormulaEvaluator.evaluateAndStore()` queries the parameter count from metadata
-4. Missing arguments are padded with `null` before appending `invocation`
-5. Function is called via spread: `fn(...paddedArgs, invocation)`
+4. Missing arguments are padded with `null`
+5. `invocation` is appended to the padded array (matching real Excel's `parameterValues.push(invocationContext)`)
+6. Function is called: `fn(...paddedArgs)` where `paddedArgs` already contains invocation at the end
 
 ### Changes Required
 
@@ -74,6 +83,15 @@ Standard Office Add-in custom functions metadata:
 | `excel-mock.ts` | Add `static async create(options)` factory method |
 | `custom-functions-mock.ts` | Add metadata storage (parameter count per function) |
 | `formula-evaluator.ts` | Add null-padding logic using metadata |
+| `request-context.ts` | No change needed — already receives the shared `MockCustomFunctions` instance which holds the metadata |
+
+### `reset()` Behavior
+
+`reset()` preserves metadata. Metadata is structural configuration (analogous to functions.json existing on disk) and survives `reset()`, which only clears runtime state (cell values, registered functions).
+
+### Out of Scope
+
+- `"repeating": true` parameters (variable-length argument lists) — padding is not applicable
 
 ### Compatibility
 
