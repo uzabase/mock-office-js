@@ -112,3 +112,109 @@ describe("ExcelMock", () => {
     expect(cells[1][1].value).toBe(4);
   });
 });
+
+describe("ExcelMock.create", () => {
+  test("ExcelMock.create calls fetch with the provided URL", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ functions: [] }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await ExcelMock.create({ functionsMetadataUrl: "/my/functions.json" });
+    expect(fetchMock).toHaveBeenCalledWith("/my/functions.json");
+
+    vi.unstubAllGlobals();
+  });
+
+  test("ExcelMock.create throws on fetch failure", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 404 }),
+    );
+
+    await expect(
+      ExcelMock.create({ functionsMetadataUrl: "/missing.json" }),
+    ).rejects.toThrow("Failed to fetch functions metadata: 404");
+
+    vi.unstubAllGlobals();
+  });
+
+  test("reset preserves metadata loaded via create", async () => {
+    const metadata = {
+      functions: [
+        {
+          id: "ADD3",
+          name: "ADD3",
+          parameters: [{ name: "a" }, { name: "b" }, { name: "c" }],
+        },
+      ],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(metadata),
+      }),
+    );
+
+    const mock = await ExcelMock.create({
+      functionsMetadataUrl: "/functions.json",
+    });
+    mock.customFunctions.associate("ADD3", () => 0);
+    mock.reset();
+
+    expect(mock.customFunctions.getFunction("ADD3")).toBeUndefined();
+
+    let receivedArgs: unknown[] = [];
+    mock.customFunctions.associate("ADD3", (...args: unknown[]) => {
+      receivedArgs = args;
+      return 0;
+    });
+    await mock.setCell("Sheet1", "A1", { formula: "=ADD3(1, 2)" });
+    expect(receivedArgs[2]).toBeNull();
+
+    vi.unstubAllGlobals();
+  });
+
+  test("ExcelMock.create fetches metadata and pads missing args with null", async () => {
+    const metadata = {
+      functions: [
+        {
+          id: "ADD3",
+          name: "ADD3",
+          parameters: [
+            { name: "a", type: "number" },
+            { name: "b", type: "number" },
+            { name: "c", type: "number", optional: true },
+          ],
+        },
+      ],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(metadata),
+      }),
+    );
+
+    const mock = await ExcelMock.create({
+      functionsMetadataUrl: "/functions.json",
+    });
+
+    let receivedArgs: unknown[] = [];
+    mock.customFunctions.associate("ADD3", (...args: unknown[]) => {
+      receivedArgs = args;
+      return 0;
+    });
+    await mock.setCell("Sheet1", "A1", { formula: "=ADD3(1, 2)" });
+    expect(receivedArgs[2]).toBeNull();
+    expect(receivedArgs[3]).toEqual({
+      address: "Sheet1!A1",
+      functionName: "ADD3",
+    });
+
+    vi.unstubAllGlobals();
+  });
+});

@@ -6,6 +6,10 @@ import { FormulaEvaluator } from "./formula-evaluator.js";
 import { parseAddress, cellAddressFromPosition, parseCellAddress } from "./address.js";
 import { MockRange } from "./range.js";
 
+export interface ExcelMockOptions {
+  functionsMetadataUrl: string;
+}
+
 export class ExcelMock {
   private _storage = new CellStorage();
   private _worksheets: MockWorksheetCollection;
@@ -83,5 +87,16 @@ export class ExcelMock {
     this._worksheets.reset();
     this._selectedSheet = undefined;
     this._selectedAddress = undefined;
+  }
+
+  static async create(options: ExcelMockOptions): Promise<ExcelMock> {
+    const mock = new ExcelMock();
+    const response = await fetch(options.functionsMetadataUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch functions metadata: ${response.status}`);
+    }
+    const metadata = await response.json();
+    mock.customFunctions.loadMetadata(metadata);
+    return mock;
   }
 }
