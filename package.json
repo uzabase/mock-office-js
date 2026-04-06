@@ -15,10 +15,8 @@
   ],
   "scripts": {
     "build": "tsup && tsc --emitDeclarationOnly --declaration --outDir dist",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:typecheck": "vitest --typecheck --run",
-    "playwright:install": "playwright install chromium",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "vitest run && vitest --typecheck --run",
     "pretest:e2e": "npm run build && cd tests/e2e/fixture && npm install",
     "test:e2e": "playwright test --config tests/e2e/playwright.config.ts"
   },
