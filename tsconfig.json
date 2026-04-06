@@ -4,13 +4,10 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "lib": ["esnext", "dom"],
-    "declaration": true,
-    "outDir": "dist",
-    "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "noEmit": true
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["tests/**", "node_modules/**"]
+  "exclude": ["tests/e2e/fixture/**", ".references/**", "node_modules/**", "dist/**"]
 }
