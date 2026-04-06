@@ -19,7 +19,7 @@ export class MockCustomFunctions {
     return this.registry.get(id.toUpperCase());
   }
 
-  loadMetadata(metadata: { functions: Array<{ id: string; parameters?: Array<unknown> }> }): void {
+  loadMetadata(metadata: { functions: Array<{ id: string; name?: string; parameters?: Array<unknown> }> }): void {
     for (const fn of metadata.functions) {
       this.parameterCounts.set(fn.id.toUpperCase(), fn.parameters?.length ?? 0);
     }

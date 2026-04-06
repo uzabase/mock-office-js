@@ -18,12 +18,14 @@
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "vitest run && vitest --typecheck --run",
     "pretest:e2e": "npm run build && cd tests/e2e/fixture && npm install",
-    "test:e2e": "playwright test --config tests/e2e/playwright.config.ts"
+    "test:e2e": "playwright test --config tests/e2e/playwright.config.ts",
+    "typecheck": "tsc --noEmit"
   },
   "license": "MIT",
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@types/custom-functions-runtime": "^1.6.11",
+    "@types/node": "^25.5.2",
     "@types/office-js": "^1.0.587",
     "tsdown": "^0.21.7",
     "typescript": "^6.0.2",
