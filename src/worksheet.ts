@@ -14,6 +14,12 @@ export class MockWorksheet {
     this._pendingLoads = pendingLoads;
   }
 
+  load(_properties: string | string[]): MockWorksheet {
+    // name and id are always available as direct properties;
+    // load() is accepted for API compatibility with real Office.js.
+    return this;
+  }
+
   getRange(address: string): MockRange {
     return new MockRange(this.name, address, this._storage, this._pendingLoads);
   }
