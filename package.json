@@ -5,16 +5,16 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "browser": "./dist/office.js",
-      "default": "./dist/office.esm.js"
+      "types": "./dist/office.d.mts",
+      "browser": "./dist/office.iife.js",
+      "default": "./dist/office.mjs"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup && tsc --emitDeclarationOnly --declaration --outDir dist",
+    "build": "tsdown",
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "vitest run && vitest --typecheck --run",
     "pretest:e2e": "npm run build && cd tests/e2e/fixture && npm install",
@@ -25,7 +25,7 @@
     "@playwright/test": "^1.59.1",
     "@types/custom-functions-runtime": "^1.6.11",
     "@types/office-js": "^1.0.587",
-    "tsup": "^8.5.1",
+    "tsdown": "^0.21.7",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   }
