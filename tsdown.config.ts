@@ -4,7 +4,7 @@ export default defineConfig([
   {
     entry: { office: "src/index.ts" },
     format: ["esm"],
-    dts: { tsconfig: "./tsconfig.json" },
+    dts: { tsconfig: "./tsconfig.build.json" },
     clean: true,
     outDir: "dist",
   },
