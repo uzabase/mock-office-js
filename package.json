@@ -18,7 +18,7 @@
     "test:watch": "vitest",
     "test:typecheck": "vitest --typecheck --run",
     "playwright:install": "playwright install chromium",
-    "pretest:e2e": "cd tests/e2e/fixture && npm install",
+    "pretest:e2e": "esbuild tests/e2e/mock-bundle-entry.ts --bundle --format=iife --outfile=tests/e2e/mock-bundle.js && cd tests/e2e/fixture && npm install",
     "test:e2e": "playwright test --config tests/e2e/playwright.config.ts"
   },
   "license": "MIT",
@@ -26,6 +26,7 @@
     "@playwright/test": "^1.59.1",
     "@types/custom-functions-runtime": "^1.6.11",
     "@types/office-js": "^1.0.587",
+    "esbuild": "^0.27.7",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   }

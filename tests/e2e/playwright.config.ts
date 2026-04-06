@@ -6,10 +6,12 @@ export default defineConfig({
   webServer: {
     command: "npx webpack serve --mode development",
     cwd: "./fixture",
-    url: "http://localhost:3000/taskpane.html",
+    url: "https://localhost:3000/taskpane.html",
+    ignoreHTTPSErrors: true,
     reuseExistingServer: !process.env.CI,
   },
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: "https://localhost:3000",
+    ignoreHTTPSErrors: true,
   },
 });
