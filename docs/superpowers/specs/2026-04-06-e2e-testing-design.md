@@ -1,0 +1,100 @@
+# E2E Testing Design for mock-office-js
+
+## Goal
+
+Verify that mock-office-js works correctly in a real browser environment, loaded via `<script type="module">` in an Excel Add-in application structure. No GUI testing — the focus is on confirming the mock API functions properly when used as a drop-in replacement for Office.js.
+
+## Test Directory Restructuring
+
+Split `tests/` into `tests/unit/` and `tests/e2e/`:
+
+```
+tests/
+├── unit/                          # Existing tests moved here
+│   ├── address.test.ts
+│   ├── cell-storage.test.ts
+│   ├── custom-functions-mock.test.ts
+│   ├── custom-functions.test-d.ts
+│   ├── excel-mock.test.ts
+│   ├── formula-evaluator.test.ts
+│   ├── formula-parser.test.ts
+│   ├── integration.test.ts
+│   ├── range.test.ts
+│   ├── range.test-d.ts
+│   ├── request-context.test.ts
+│   ├── workbook.test-d.ts
+│   └── workbook.test.ts
+└── e2e/
+    ├── fixture/                   # yo office generated Excel Custom Functions Add-in
+    │   ├── manifest.xml
+    │   ├── src/
+    │   │   ├── taskpane/
+    │   │   │   ├── taskpane.html
+    │   │   │   └── taskpane.ts
+    │   │   └── functions/
+    │   │       ├── functions.ts
+    │   │       └── functions.json
+    │   ├── webpack.config.js
+    │   └── package.json
+    ├── excel-mock.e2e.test.ts
+    └── playwright.config.ts
+```
+
+## Fixture App
+
+### Approach
+
+1. Generate an Excel Custom Functions Add-in using `yo office` template
+2. Modify the webpack config to resolve `mock-office-js` to `../../../src/index.ts` (avoids dependency on built `dist/`)
+3. Replace the Office.js CDN `<script>` tag in HTML with a `<script>` tag that loads mock-office-js
+4. Confirm E2E tests pass, then trim unnecessary generated files
+
+### Why yo office
+
+- Produces a real Add-in structure with manifest.xml, functions.json, and function implementations
+- Safer to start from a working template and remove what's not needed than to hand-craft and miss something
+- webpack config and other Office-specific setup come pre-configured
+
+## E2E Test Architecture
+
+### Flow
+
+1. Playwright `webServer` option auto-starts the fixture app's dev server
+2. Playwright opens a browser and navigates to taskpane.html
+3. Tests use `page.evaluate()` to interact with the global `Excel` / `CustomFunctions` objects in the browser
+4. Assertions verify mock behavior
+
+### Test Scenarios
+
+- `Excel.run()` — get and set cell values via RequestContext
+- `CustomFunctions.associate()` — register custom functions and evaluate formulas
+- Worksheet operations — add worksheets, switch active worksheet
+- Load/sync pattern — verify properties require load + sync before access
+
+## Configuration Changes
+
+### vitest.config.ts
+
+- Change test include path to `tests/unit/` only
+
+### playwright.config.ts (new, in `tests/e2e/`)
+
+- `webServer`: start fixture app's dev server
+- `testDir`: `tests/e2e/`
+- `testMatch`: `*.e2e.test.ts`
+
+### Fixture webpack config
+
+- Add `resolve.alias` to point `mock-office-js` to source TypeScript (`../../../src/index.ts`)
+- Exact loader/config adjustments determined at implementation time based on generated template
+
+### package.json
+
+- Add `@playwright/test` to devDependencies
+- Add `test:e2e` script: `playwright test --config tests/e2e/playwright.config.ts`
+
+### npm scripts (updated)
+
+- `test` → `vitest run` (target: `tests/unit/`)
+- `test:e2e` → `playwright test`
+- `test:typecheck` → unchanged
