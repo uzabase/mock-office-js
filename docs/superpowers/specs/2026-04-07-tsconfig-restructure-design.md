@@ -28,7 +28,7 @@ Remove build settings, add `noEmit: true`, remove `include` to cover the entire 
     "skipLibCheck": true,
     "noEmit": true
   },
-  "exclude": ["tests/e2e/fixture/**", "node_modules/**", "dist/**"]
+  "exclude": ["tests/e2e/fixture/**", ".references/**", "node_modules/**", "dist/**"]
 }
 ```
 
@@ -36,25 +36,20 @@ Remove build settings, add `noEmit: true`, remove `include` to cover the entire 
 - Removed: `outDir`, `declaration`, `rootDir`
 - Added: `noEmit: true`
 - Removed: `include` (defaults to all `.ts` files)
-- Updated: `exclude` to cover `tests/e2e/fixture/`, `node_modules/`, `dist/`
+- Updated: `exclude` to cover `tests/e2e/fixture/`, `.references/`, `node_modules/`, `dist/`
 
 ### `tsconfig.build.json` — tsdown dts generation (new)
 
-Preserves the current `tsconfig.json` settings needed by tsdown for `.d.mts` generation.
+Extends `tsconfig.json` and adds only the build-specific settings needed by tsdown for `.d.mts` generation.
 
 ```jsonc
 {
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "target": "esnext",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "lib": ["esnext", "dom"],
+    "noEmit": false,
     "declaration": true,
     "outDir": "dist",
-    "rootDir": "src",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true
+    "rootDir": "src"
   },
   "include": ["src/**/*.ts"]
 }
@@ -66,9 +61,19 @@ Preserves the current `tsconfig.json` settings needed by tsdown for `.d.mts` gen
 dts: { tsconfig: "./tsconfig.build.json" },
 ```
 
-### `tsconfig.test-d.json` — No changes
+### `tsconfig.test-d.json` — Clean up redundant overrides (modified)
 
-Extends `tsconfig.json` and adds `noEmit: true` (now redundant but harmless). Continues to work as before for vitest typecheck.
+Extends `tsconfig.json`. Remove `rootDir` override (parent no longer has `rootDir`) and `noEmit` (parent already sets it). Only keep the `types` and `include` additions.
+
+```jsonc
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*.ts", "tests/unit/**/*.test-d.ts"],
+  "compilerOptions": {
+    "types": ["office-js", "custom-functions-runtime"]
+  }
+}
+```
 
 ### `package.json` scripts — No changes
 
@@ -81,7 +86,7 @@ Existing scripts remain functional. `tsc --noEmit` uses the updated `tsconfig.js
 | `tsconfig.json` | Modify — type-check only, project-wide |
 | `tsconfig.build.json` | Create — tsdown dts config |
 | `tsdown.config.ts` | Modify — point to `tsconfig.build.json` |
-| `tsconfig.test-d.json` | No change |
+| `tsconfig.test-d.json` | Modify — remove redundant `rootDir` and `noEmit` overrides |
 | `package.json` | No change |
 
 ## Out of scope
