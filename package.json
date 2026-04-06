@@ -18,7 +18,7 @@
     "test:watch": "vitest",
     "test:typecheck": "vitest --typecheck --run",
     "playwright:install": "playwright install chromium",
-    "pretest:e2e": "esbuild tests/e2e/mock-bundle-entry.ts --bundle --format=iife --outfile=tests/e2e/mock-bundle.js && cd tests/e2e/fixture && npm install",
+    "pretest:e2e": "npm run build && esbuild tests/e2e/mock-bundle-entry.ts --bundle --format=iife --outfile=tests/e2e/mock-bundle.js && cd tests/e2e/fixture && npm install",
     "test:e2e": "playwright test --config tests/e2e/playwright.config.ts"
   },
   "license": "MIT",
