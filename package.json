@@ -16,10 +16,14 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:typecheck": "vitest --typecheck --run"
+    "test:typecheck": "vitest --typecheck --run",
+    "playwright:install": "playwright install chromium",
+    "pretest:e2e": "cd tests/e2e/fixture && npm install",
+    "test:e2e": "playwright test --config tests/e2e/playwright.config.ts"
   },
   "license": "MIT",
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/custom-functions-runtime": "^1.6.11",
     "@types/office-js": "^1.0.587",
     "typescript": "^6.0.2",
