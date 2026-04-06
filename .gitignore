@@ -4,6 +4,5 @@ node_modules/
 dist/
 tests/e2e/fixture/node_modules/
 tests/e2e/fixture/dist/
-tests/e2e/mock-bundle.js
 test-results/
 playwright-report/

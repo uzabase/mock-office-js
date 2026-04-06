@@ -6,19 +6,20 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "browser": "./dist/office.js",
+      "default": "./dist/office.esm.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsup && tsc --emitDeclarationOnly --declaration --outDir dist",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:typecheck": "vitest --typecheck --run",
     "playwright:install": "playwright install chromium",
-    "pretest:e2e": "npm run build && esbuild tests/e2e/mock-bundle-entry.ts --bundle --format=iife --outfile=tests/e2e/mock-bundle.js && cd tests/e2e/fixture && npm install",
+    "pretest:e2e": "npm run build && cd tests/e2e/fixture && npm install",
     "test:e2e": "playwright test --config tests/e2e/playwright.config.ts"
   },
   "license": "MIT",
@@ -26,7 +27,7 @@
     "@playwright/test": "^1.59.1",
     "@types/custom-functions-runtime": "^1.6.11",
     "@types/office-js": "^1.0.587",
-    "esbuild": "^0.27.7",
+    "tsup": "^8.5.1",
     "typescript": "^6.0.2",
     "vitest": "^4.1.2"
   }

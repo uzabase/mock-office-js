@@ -1,4 +1,4 @@
-import { ExcelMock } from "../../dist/index.js";
+import { ExcelMock } from "./excel-mock.js";
 
 const mock = new ExcelMock();
 
