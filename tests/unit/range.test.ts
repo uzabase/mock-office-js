@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { MockRange } from "../src/range.js";
-import { CellStorage } from "../src/cell-storage.js";
+import { MockRange } from "../../src/range.js";
+import { CellStorage } from "../../src/cell-storage.js";
 
 describe("MockRange", () => {
   function createRange(address: string, storage?: CellStorage) {

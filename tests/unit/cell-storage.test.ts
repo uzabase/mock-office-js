@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { CellStorage } from "../src/cell-storage.js";
+import { CellStorage } from "../../src/cell-storage.js";
 
 describe("CellStorage", () => {
   test("returns empty string for uninitialized cell", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { parseFormula } from "../src/formula-parser.js";
+import { parseFormula } from "../../src/formula-parser.js";
 
 describe("parseFormula", () => {
   test("parses function with no arguments", () => {

@@ -1,6 +1,6 @@
 {
   "name": "mock-office-js",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "In-memory mock of Office JavaScript API for testing Office Add-ins",
   "type": "module",
   "exports": {
@@ -9,7 +9,9 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",

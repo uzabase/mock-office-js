@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { MockCustomFunctions } from "../src/custom-functions-mock.js";
+import { MockCustomFunctions } from "../../src/custom-functions-mock.js";
 
 describe("MockCustomFunctions", () => {
   test("associate registers a single function", () => {

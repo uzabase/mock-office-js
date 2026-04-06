@@ -1,9 +1,9 @@
 import { describe, expect, test } from "vitest";
-import { MockRequestContext } from "../src/request-context.js";
-import { CellStorage } from "../src/cell-storage.js";
-import { MockCustomFunctions } from "../src/custom-functions-mock.js";
-import { MockWorksheetCollection } from "../src/worksheet-collection.js";
-import { MockRange } from "../src/range.js";
+import { MockRequestContext } from "../../src/request-context.js";
+import { CellStorage } from "../../src/cell-storage.js";
+import { MockCustomFunctions } from "../../src/custom-functions-mock.js";
+import { MockWorksheetCollection } from "../../src/worksheet-collection.js";
+import { MockRange } from "../../src/range.js";
 
 describe("MockRequestContext", () => {
   function createContext() {

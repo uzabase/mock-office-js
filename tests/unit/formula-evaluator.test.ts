@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
-import { FormulaEvaluator } from "../src/formula-evaluator.js";
-import { CellStorage } from "../src/cell-storage.js";
-import { MockCustomFunctions } from "../src/custom-functions-mock.js";
+import { FormulaEvaluator } from "../../src/formula-evaluator.js";
+import { CellStorage } from "../../src/cell-storage.js";
+import { MockCustomFunctions } from "../../src/custom-functions-mock.js";
 
 describe("FormulaEvaluator", () => {
   function createEvaluator() {

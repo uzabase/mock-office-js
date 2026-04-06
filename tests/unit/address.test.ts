@@ -5,7 +5,7 @@ import {
   parseAddress,
   parseCellAddress,
   resolveRangeAddresses,
-} from "../src/address.js";
+} from "../../src/address.js";
 
 describe("columnLetterToIndex", () => {
   test("converts single letter columns", () => {
