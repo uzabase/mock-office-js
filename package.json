@@ -6,7 +6,7 @@
   "exports": {
     ".": {
       "types": "./dist/office.d.mts",
-      "browser": "./dist/office.iife.js",
+      "browser": "./dist/office.js",
       "default": "./dist/office.mjs"
     }
   },
@@ -14,7 +14,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown && mv dist/office.iife.js dist/office.js",
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "vitest run && vitest --typecheck --run",
     "pretest:e2e": "npm run build && cd tests/e2e/fixture && npm install",

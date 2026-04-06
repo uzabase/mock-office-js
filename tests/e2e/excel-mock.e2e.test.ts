@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const mockBundle = fs.readFileSync(
-  path.join(__dirname, "../../dist/office.iife.js"),
+  path.join(__dirname, "../../dist/office.js"),
   "utf-8"
 );
 
