@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi, afterEach } from "vitest";
 import { createMockEnvironment } from "../../src/setup.js";
 
 describe("createMockEnvironment", () => {
@@ -164,6 +164,101 @@ describe("mockOfficeJs.reset", () => {
     mockOfficeJs.reset();
     await excel.run(async (context: any) => {
       expect(() => context.workbook.getSelectedRange()).toThrow();
+    });
+  });
+});
+
+describe("mockOfficeJs.excel.loadFunctionsMetadata", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  test("fetches metadata from URL", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ functions: [] }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { mockOfficeJs } = createMockEnvironment();
+    await mockOfficeJs.excel.loadFunctionsMetadata("/my/functions.json");
+    expect(fetchMock).toHaveBeenCalledWith("/my/functions.json");
+  });
+
+  test("throws on fetch failure", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 404 }),
+    );
+
+    const { mockOfficeJs } = createMockEnvironment();
+    await expect(
+      mockOfficeJs.excel.loadFunctionsMetadata("/missing.json"),
+    ).rejects.toThrow("Failed to fetch functions metadata: 404");
+  });
+
+  test("metadata survives reset", async () => {
+    const metadata = {
+      functions: [
+        { id: "ADD3", name: "ADD3", parameters: [{ name: "a" }, { name: "b" }, { name: "c" }] },
+      ],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(metadata),
+      }),
+    );
+
+    const { customFunctions, mockOfficeJs } = createMockEnvironment();
+    await mockOfficeJs.excel.loadFunctionsMetadata("/functions.json");
+    customFunctions.associate("ADD3", () => 0);
+    mockOfficeJs.reset();
+
+    expect(customFunctions.getFunction("ADD3")).toBeUndefined();
+
+    let receivedArgs: unknown[] = [];
+    customFunctions.associate("ADD3", (...args: unknown[]) => {
+      receivedArgs = args;
+      return 0;
+    });
+    await mockOfficeJs.excel.setCell("Sheet1", "A1", { formula: "=ADD3(1, 2)" });
+    expect(receivedArgs[2]).toBeNull();
+  });
+
+  test("loadFunctionsMetadata enables invocation context argument", async () => {
+    const metadata = {
+      functions: [
+        {
+          id: "ADD3",
+          name: "ADD3",
+          parameters: [
+            { name: "a", type: "number" },
+            { name: "b", type: "number" },
+            { name: "c", type: "number", optional: true },
+          ],
+        },
+      ],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(metadata),
+      }),
+    );
+
+    const { customFunctions, mockOfficeJs } = createMockEnvironment();
+    await mockOfficeJs.excel.loadFunctionsMetadata("/functions.json");
+
+    let receivedArgs: unknown[] = [];
+    customFunctions.associate("ADD3", (...args: unknown[]) => {
+      receivedArgs = args;
+      return 0;
+    });
+    await mockOfficeJs.excel.setCell("Sheet1", "A1", { formula: "=ADD3(1, 2)" });
+    expect(receivedArgs[3]).toEqual({
+      address: "Sheet1!A1",
+      functionName: "ADD3",
     });
   });
 });
