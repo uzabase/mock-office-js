@@ -22,6 +22,9 @@
     "typecheck": "tsc --noEmit"
   },
   "license": "MIT",
+  "peerDependencies": {
+    "@types/office-js": "^1.0.0"
+  },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@types/custom-functions-runtime": "^1.6.11",

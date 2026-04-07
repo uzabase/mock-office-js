@@ -9,7 +9,7 @@ export default defineConfig([
     outDir: "dist",
   },
   {
-    entry: { office: "src/browser.ts" },
+    entry: { office: "src/index.ts" },
     format: ["iife"],
     outDir: "dist",
   },
