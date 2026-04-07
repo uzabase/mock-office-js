@@ -105,3 +105,65 @@ describe("mockOfficeJs.excel", () => {
     expect(mockOfficeJs.excel.getCell("Sheet1", "A1").value).toBe(3);
   });
 });
+
+describe("Excel.run shared state", () => {
+  test("Excel.run reads data set via mockOfficeJs.excel.setCell", async () => {
+    const { excel, mockOfficeJs } = createMockEnvironment();
+    mockOfficeJs.excel.setCell("Sheet1", "A1", 42);
+    await excel.run(async (context: any) => {
+      const range = context.workbook.worksheets.getActiveWorksheet().getRange("A1");
+      range.load("values");
+      await context.sync();
+      expect(range.values).toEqual([[42]]);
+    });
+  });
+
+  test("Excel.run formula write evaluates custom function", async () => {
+    const { excel, customFunctions, mockOfficeJs } = createMockEnvironment();
+    customFunctions.associate("DOUBLE", (n: number) => n * 2);
+    await excel.run(async (context: any) => {
+      const range = context.workbook.worksheets.getActiveWorksheet().getRange("A1");
+      range.formulas = [["=DOUBLE(21)"]];
+      await context.sync();
+    });
+    expect(mockOfficeJs.excel.getCell("Sheet1", "A1").value).toBe(42);
+  });
+});
+
+describe("Office.onReady", () => {
+  test("calls callback with host and platform info", async () => {
+    const { office } = createMockEnvironment();
+    let receivedInfo: any;
+    await office.onReady((info) => {
+      receivedInfo = info;
+    });
+    expect(receivedInfo).toEqual({ host: "Excel", platform: "Web" });
+  });
+
+  test("returns a promise with host and platform info", async () => {
+    const { office } = createMockEnvironment();
+    const info = await office.onReady();
+    expect(info).toEqual({ host: "Excel", platform: "Web" });
+  });
+});
+
+describe("mockOfficeJs.reset", () => {
+  test("clears all state", () => {
+    const { customFunctions, mockOfficeJs } = createMockEnvironment();
+    customFunctions.associate("ADD", (a: number, b: number) => a + b);
+    mockOfficeJs.excel.setCell("Sheet1", "A1", 42);
+    mockOfficeJs.excel.addWorksheet("Sheet2");
+    mockOfficeJs.reset();
+    expect(mockOfficeJs.excel.getCell("Sheet1", "A1").value).toBe("");
+    expect(customFunctions.getFunction("ADD")).toBeUndefined();
+  });
+
+  test("clears selected range", async () => {
+    const { excel, mockOfficeJs } = createMockEnvironment();
+    mockOfficeJs.excel.setSelectedRange("Sheet1", "B1");
+    mockOfficeJs.reset();
+    await excel.run(async (context: any) => {
+      expect(() => context.workbook.getSelectedRange()).toThrow();
+    });
+  });
+});
