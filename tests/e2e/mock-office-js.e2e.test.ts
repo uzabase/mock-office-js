@@ -11,7 +11,6 @@ const mockBundle = fs.readFileSync(
 );
 
 test.beforeEach(async ({ page }) => {
-  // Intercept Office.js CDN request and serve mock-office-js bundle instead
   await page.route("**/appsforoffice.microsoft.com/**", async (route) => {
     await route.fulfill({
       contentType: "application/javascript",
@@ -20,13 +19,13 @@ test.beforeEach(async ({ page }) => {
   });
 
   await page.goto("/taskpane.html");
-  await page.waitForFunction(() => (window as any).__mock__ !== undefined);
+  await page.waitForFunction(() => (window as any).MockOfficeJs !== undefined);
 });
 
 test("Excel.run can read cell values set via mock", async ({ page }) => {
   const value = await page.evaluate(async () => {
-    const mock = (window as any).__mock__;
-    mock.setCell("Sheet1", "A1", 42);
+    const MockOfficeJs = (window as any).MockOfficeJs;
+    MockOfficeJs.excel.setCell("Sheet1", "A1", 42);
 
     let result: number[][] = [];
     await (window as any).Excel.run(async (context: any) => {
@@ -47,14 +46,13 @@ test("CustomFunctions.associate registers functions and formulas evaluate", asyn
   page,
 }) => {
   const value = await page.evaluate(async () => {
-    const mock = (window as any).__mock__;
+    const MockOfficeJs = (window as any).MockOfficeJs;
     const CustomFunctions = (window as any).CustomFunctions;
 
-    // Register a function via the mock's associate API
     CustomFunctions.associate("ADD", (a: number, b: number) => a + b);
 
-    await mock.setCell("Sheet1", "A1", { formula: "=ADD(2, 3)" });
-    return mock.getCell("Sheet1", "A1").value;
+    await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: "=ADD(2, 3)" });
+    return MockOfficeJs.excel.getCell("Sheet1", "A1").value;
   });
 
   expect(value).toBe(5);
@@ -64,9 +62,9 @@ test("worksheet operations: add and switch active worksheet", async ({
   page,
 }) => {
   const sheetName = await page.evaluate(async () => {
-    const mock = (window as any).__mock__;
-    mock.addWorksheet("Sheet2");
-    mock.setActiveWorksheet("Sheet2");
+    const MockOfficeJs = (window as any).MockOfficeJs;
+    MockOfficeJs.excel.addWorksheet("Sheet2");
+    MockOfficeJs.excel.setActiveWorksheet("Sheet2");
 
     let name = "";
     await (window as any).Excel.run(async (context: any) => {
@@ -102,13 +100,13 @@ test("accessing range properties without load/sync throws an error", async ({
   expect(errorMessage).toBeTruthy();
 });
 
-test("mock.reset() clears cell values", async ({ page }) => {
+test("MockOfficeJs.reset() clears cell values", async ({ page }) => {
   await page.evaluate(async () => {
-    const mock = (window as any).__mock__;
-    mock.setCell("Sheet1", "A1", 99);
+    const MockOfficeJs = (window as any).MockOfficeJs;
+    MockOfficeJs.excel.setCell("Sheet1", "A1", 99);
   });
 
-  await page.evaluate(() => (window as any).__mock__.reset());
+  await page.evaluate(() => (window as any).MockOfficeJs.reset());
 
   const value = await page.evaluate(async () => {
     let result: any[][] = [];
