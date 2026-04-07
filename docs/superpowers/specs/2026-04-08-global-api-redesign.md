@@ -17,8 +17,8 @@ Real office.js is loaded via `<script src="...office.js">` and automatically set
 | Global | Content | Real office.js equivalent |
 |---|---|---|
 | `Excel` | `{ run: (cb) => Promise }` | Real `Excel` |
-| `Office` | `{ onReady: (cb?) => void, actions: { associate: () => {} } }` | Real `Office` |
-| `CustomFunctions` | `associate()`, `Error`, `ErrorCode` | Real `CustomFunctions` |
+| `Office` | `{ onReady: (cb?) => Promise<{ host, platform }> }` | Real `Office` |
+| `CustomFunctions` | Full `MockCustomFunctions` instance (`associate()`, `Error`, `ErrorCode`, plus internal methods) | Real `CustomFunctions` |
 | `MockOfficeJs` | Test helpers (mock-specific) | No equivalent |
 
 ```ts
@@ -71,9 +71,13 @@ MockOfficeJs.excel.getCells(sheet, rangeAddress)          // Get a range of cell
 MockOfficeJs.excel.setSelectedRange(sheet, address)       // Set selected range
 MockOfficeJs.excel.setActiveWorksheet(sheet)              // Set active worksheet
 MockOfficeJs.excel.addWorksheet(name)                     // Add a worksheet
-MockOfficeJs.excel.loadFunctionsMetadata(url)             // Load custom functions metadata (Excel-specific)
+MockOfficeJs.excel.loadFunctionsMetadata(url)             // Fetch and load custom functions metadata (async, calls fetch internally)
 MockOfficeJs.reset()                                       // Reset all state across all hosts
 ```
+
+`loadFunctionsMetadata(url)` is async — it calls `fetch(url)` internally, parses the JSON response, and loads the function parameter counts into `MockCustomFunctions`. This replaces the previous `ExcelMock.create(options)` static factory.
+
+`reset()` clears all shared state: cell storage, custom function registrations, worksheet collection, and selected range. Metadata loaded via `loadFunctionsMetadata` is preserved across resets (matching current behavior where `reset` preserves metadata loaded via `create`).
 
 Excel-specific helpers are nested under `MockOfficeJs.excel` because:
 - Custom Functions are Excel-only (manifest.xml defines them inside `<Host xsi:type="Workbook">`)
@@ -114,6 +118,8 @@ declare global {
 }
 ```
 
+`@types/office-js` remains in `devDependencies` as well (for the project's own type-checking and tests). The `peerDependencies` entry tells consumers to install it.
+
 This ensures consumers have the global types for `Excel`, `Office`, `CustomFunctions` without mock-office-js re-declaring them (which would cause type conflicts).
 
 ### Build Changes
@@ -144,10 +150,11 @@ import "mock-office-js";
 | `ExcelMock` class | Removed. Replaced by `createMockEnvironment()` |
 | `src/index.ts` | Named exports → side-effect only (global setup) |
 | `src/browser.ts` | Removed |
-| `package.json` exports | Structure maintained, usage changes |
+| `package.json` exports | Same paths in `exports` field, but module changes from named exports to side-effect-only |
 | `tsdown.config.ts` | IIFE entry point unified to `index.ts` |
 | `declare global` | `MockOfficeJs` only. `Excel` etc. from `@types/office-js` |
 | `peerDependencies` | `@types/office-js` added |
-| Existing tests | Rewrite to use global `MockOfficeJs` instead of `ExcelMock` |
+| Existing unit tests | Rewrite to use global `MockOfficeJs` instead of `ExcelMock` |
+| E2E tests | Migrate from `window.__mock__` to `window.MockOfficeJs` |
 
 This is a breaking change, acceptable at version 0.0.x.
