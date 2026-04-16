@@ -32,4 +32,10 @@ describe("parseFormula", () => {
   test("parses string with escaped quotes", () => {
     expect(parseFormula('=FUNC("he said ""hi""")')).toEqual({ functionName: "FUNC", args: ['he said "hi"'] });
   });
+  test("preserves quoted numeric string as string", () => {
+    expect(parseFormula('=FUNC("2023")')).toEqual({ functionName: "FUNC", args: ["2023"] });
+  });
+  test("preserves empty quoted string", () => {
+    expect(parseFormula('=FUNC("")')).toEqual({ functionName: "FUNC", args: [""] });
+  });
 });

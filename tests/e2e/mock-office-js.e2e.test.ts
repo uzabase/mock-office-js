@@ -100,6 +100,22 @@ test("accessing range properties without load/sync throws an error", async ({
   expect(errorMessage).toBeTruthy();
 });
 
+test("quoted numeric string argument is preserved as string", async ({
+  page,
+}) => {
+  const result = await page.evaluate(async () => {
+    const MockOfficeJs = (window as any).MockOfficeJs;
+    const CustomFunctions = (window as any).CustomFunctions;
+
+    CustomFunctions.associate("ECHO", (val: any) => typeof val + ":" + val);
+
+    await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: '=ECHO("2023")' });
+    return MockOfficeJs.excel.getCell("Sheet1", "A1").value;
+  });
+
+  expect(result).toBe("string:2023");
+});
+
 test("MockOfficeJs.reset() clears cell values", async ({ page }) => {
   await page.evaluate(async () => {
     const MockOfficeJs = (window as any).MockOfficeJs;

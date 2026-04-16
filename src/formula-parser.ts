@@ -21,6 +21,7 @@ function parseArgs(argsString: string): unknown[] {
   const args: unknown[] = [];
   let current = "";
   let inString = false;
+  let wasQuoted = false;
   let i = 0;
   while (i < argsString.length) {
     const char = argsString[i];
@@ -39,12 +40,12 @@ function parseArgs(argsString: string): unknown[] {
       i++;
       continue;
     }
-    if (char === '"') { inString = true; i++; continue; }
-    if (char === ",") { args.push(parseArgValue(current.trim())); current = ""; i++; continue; }
+    if (char === '"') { inString = true; wasQuoted = true; i++; continue; }
+    if (char === ",") { args.push(wasQuoted ? current : parseArgValue(current.trim())); current = ""; wasQuoted = false; i++; continue; }
     current += char;
     i++;
   }
-  if (current.trim() !== "") args.push(parseArgValue(current.trim()));
+  if (current.trim() !== "" || wasQuoted) args.push(wasQuoted ? current : parseArgValue(current.trim()));
   return args;
 }
 
