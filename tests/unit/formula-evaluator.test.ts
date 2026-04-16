@@ -121,21 +121,11 @@ describe("FormulaEvaluator", () => {
     });
   });
 
-  test("no padding when no metadata is loaded", async () => {
+  test("returns #NAME? when function has no metadata", async () => {
     const { evaluator, storage, cf } = createEvaluator();
-    let receivedArgs: unknown[] = [];
-    cf.associate("FUNC3", (...args: unknown[]) => {
-      receivedArgs = args;
-      return 0;
-    });
+    cf.associate("FUNC3", (...args: unknown[]) => 0);
     await evaluator.evaluateAndStore("Sheet1", "A1", "=FUNC3(1, 2)");
-    expect(receivedArgs).toHaveLength(3);
-    expect(receivedArgs[0]).toBe(1);
-    expect(receivedArgs[1]).toBe(2);
-    expect(receivedArgs[2]).toEqual({
-      address: "Sheet1!A1",
-      functionName: "FUNC3",
-    });
+    expect(storage.getCell("Sheet1", "A1").value).toBe("#NAME?");
   });
 
   test("pads all args to null when called with zero args", async () => {

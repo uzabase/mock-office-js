@@ -19,17 +19,19 @@ export class FormulaEvaluator {
       this._storage.setFormula(sheet, address, formulaStr, "#NAME?");
       return;
     }
+    const paramCount = this._customFunctions.getParameterCount(parsed.functionName);
+    if (paramCount === undefined) {
+      this._storage.setFormula(sheet, address, formulaStr, "#NAME?");
+      return;
+    }
     const invocation = {
       address: `${sheet}!${address}`,
       functionName: parsed.functionName.toUpperCase(),
     };
     try {
-      const paramCount = this._customFunctions.getParameterCount(parsed.functionName);
       const paddedArgs = [...parsed.args];
-      if (paramCount !== undefined) {
-        while (paddedArgs.length < paramCount) {
-          paddedArgs.push(null);
-        }
+      while (paddedArgs.length < paramCount) {
+        paddedArgs.push(null);
       }
       paddedArgs.push(invocation);
       const result = await fn(...paddedArgs);
