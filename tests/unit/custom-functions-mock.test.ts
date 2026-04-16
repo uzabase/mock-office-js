@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { MockCustomFunctions } from "../../src/custom-functions-mock.js";
 
 describe("MockCustomFunctions", () => {
@@ -108,5 +108,32 @@ describe("MockCustomFunctions", () => {
   test("getParameterCount returns undefined for unknown function", () => {
     const cf = new MockCustomFunctions();
     expect(cf.getParameterCount("UNKNOWN")).toBeUndefined();
+  });
+
+  test("associate warns when no metadata is loaded for the function", () => {
+    const cf = new MockCustomFunctions();
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    cf.associate("ADD", () => 0);
+    expect(warnSpy).toHaveBeenCalledOnce();
+    expect(warnSpy.mock.calls[0][0]).toContain("ADD");
+    expect(warnSpy.mock.calls[0][0]).toContain("no metadata");
+    warnSpy.mockRestore();
+  });
+
+  test("associate warns for each function without metadata (object form)", () => {
+    const cf = new MockCustomFunctions();
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    cf.associate({ ADD: () => 0, MUL: () => 0 });
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+    warnSpy.mockRestore();
+  });
+
+  test("associate does not warn when metadata is loaded", () => {
+    const cf = new MockCustomFunctions();
+    cf.loadMetadata({ functions: [{ id: "ADD", parameters: [{ name: "a" }] }] });
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    cf.associate("ADD", () => 0);
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 });

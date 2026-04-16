@@ -8,9 +8,21 @@ export class MockCustomFunctions {
   ): void {
     if (typeof idOrMappings === "string") {
       this.registry.set(idOrMappings.toUpperCase(), fn!);
+      if (!this.parameterCounts.has(idOrMappings.toUpperCase())) {
+        console.warn(
+          `[mock-office-js] CustomFunctions.associate("${idOrMappings}"): no metadata loaded for this function. ` +
+          `Call loadFunctionsMetadata() or loadMetadata() first. Without metadata, the function will return #NAME?.`
+        );
+      }
     } else {
       for (const [id, func] of Object.entries(idOrMappings)) {
         this.registry.set(id.toUpperCase(), func);
+        if (!this.parameterCounts.has(id.toUpperCase())) {
+          console.warn(
+            `[mock-office-js] CustomFunctions.associate("${id}"): no metadata loaded for this function. ` +
+            `Call loadFunctionsMetadata() or loadMetadata() first. Without metadata, the function will return #NAME?.`
+          );
+        }
       }
     }
   }
