@@ -206,4 +206,57 @@ describe("FormulaEvaluator", () => {
       functionName: "NOPARAM",
     });
   });
+
+  test("lowercase function name resolves correctly", async () => {
+    const { evaluator, storage, cf } = createEvaluator();
+    cf.associate("ADD", (a: number, b: number) => a + b);
+    await evaluator.evaluateAndStore("Sheet1", "A1", "=add(1, 2)");
+    expect(storage.getCell("Sheet1", "A1").value).toBe(3);
+  });
+
+  test("namespaced function evaluates correctly", async () => {
+    const { evaluator, storage, cf } = createEvaluator();
+    cf.associate("CONTOSO.ADD", (a: number, b: number) => a + b);
+    await evaluator.evaluateAndStore("Sheet1", "A1", "=CONTOSO.ADD(1, 2)");
+    expect(storage.getCell("Sheet1", "A1").value).toBe(3);
+    expect(storage.getCell("Sheet1", "A1").formula).toBe("=CONTOSO.ADD(1, 2)");
+  });
+
+  test("string argument is passed to function as string", async () => {
+    const { evaluator, storage, cf } = createEvaluator();
+    let receivedArg: unknown;
+    cf.associate("ECHO", (val: unknown) => {
+      receivedArg = val;
+      return val;
+    });
+    await evaluator.evaluateAndStore("Sheet1", "A1", '=ECHO("hello")');
+    expect(receivedArg).toBe("hello");
+    expect(typeof receivedArg).toBe("string");
+  });
+
+  test("boolean argument is passed to function as boolean", async () => {
+    const { evaluator, storage, cf } = createEvaluator();
+    let receivedArg: unknown;
+    cf.associate("ECHO", (val: unknown) => {
+      receivedArg = val;
+      return val;
+    });
+    await evaluator.evaluateAndStore("Sheet1", "A1", "=ECHO(TRUE)");
+    expect(receivedArg).toBe(true);
+    expect(typeof receivedArg).toBe("boolean");
+  });
+
+  test("function returning string stores string value", async () => {
+    const { evaluator, storage, cf } = createEvaluator();
+    cf.associate("GREET", (name: string) => "hello " + name);
+    await evaluator.evaluateAndStore("Sheet1", "A1", '=GREET("world")');
+    expect(storage.getCell("Sheet1", "A1").value).toBe("hello world");
+  });
+
+  test("async function that throws stores #VALUE!", async () => {
+    const { evaluator, storage, cf } = createEvaluator();
+    cf.associate("ASYNC_FAIL", async () => { throw new Error("async boom"); });
+    await evaluator.evaluateAndStore("Sheet1", "A1", "=ASYNC_FAIL()");
+    expect(storage.getCell("Sheet1", "A1").value).toBe("#VALUE!");
+  });
 });

@@ -47,4 +47,19 @@ describe("parseFormula", () => {
   test("multiple quoted strings after comma have no leading space", () => {
     expect(parseFormula('=FUNC(1, "hello", "world")')).toEqual({ functionName: "FUNC", args: [1, "hello", "world"] });
   });
+  test("parses args with no space after comma", () => {
+    expect(parseFormula("=FUNC(1,2)")).toEqual({ functionName: "FUNC", args: [1, 2] });
+  });
+  test("quoted boolean string is preserved as string", () => {
+    expect(parseFormula('=FUNC("TRUE")')).toEqual({ functionName: "FUNC", args: ["TRUE"] });
+  });
+  test("quoted boolean string after comma is preserved as string", () => {
+    expect(parseFormula('=FUNC(1, "FALSE")')).toEqual({ functionName: "FUNC", args: [1, "FALSE"] });
+  });
+  test("zero is parsed as number", () => {
+    expect(parseFormula("=FUNC(0)")).toEqual({ functionName: "FUNC", args: [0] });
+  });
+  test("single numeric argument", () => {
+    expect(parseFormula("=FUNC(42)")).toEqual({ functionName: "FUNC", args: [42] });
+  });
 });

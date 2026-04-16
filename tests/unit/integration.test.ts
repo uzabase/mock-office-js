@@ -81,4 +81,29 @@ describe("E2E integration", () => {
     MockOfficeJs.reset();
     expect(MockOfficeJs.excel.getCell("Sheet1", "A1").value).toBe("");
   });
+
+  test("namespaced custom function evaluates via setCell", async () => {
+    CustomFunctions.associate("CONTOSO.ADD", (a: number, b: number) => a + b);
+    await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: "=CONTOSO.ADD(10, 20)" });
+
+    await Excel.run(async (context: any) => {
+      const range = context.workbook.worksheets.getActiveWorksheet().getRange("A1");
+      range.load(["values", "formulas"]);
+      await context.sync();
+      expect(range.values).toEqual([[30]]);
+      expect(range.formulas).toEqual([["=CONTOSO.ADD(10, 20)"]]);
+    });
+  });
+
+  test("mixed argument types are passed correctly to custom function", async () => {
+    let receivedArgs: unknown[] = [];
+    CustomFunctions.associate("MIXED", (...args: unknown[]) => {
+      receivedArgs = args.slice(0, -1); // exclude invocation
+      return "ok";
+    });
+    await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: '=MIXED(42, "hello", TRUE)' });
+
+    expect(receivedArgs).toEqual([42, "hello", true]);
+    expect(MockOfficeJs.excel.getCell("Sheet1", "A1").value).toBe("ok");
+  });
 });
