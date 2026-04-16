@@ -40,6 +40,7 @@ describe("MockRequestContext", () => {
 
   test("sync executes queued formula writes and evaluates custom functions", async () => {
     const { context, storage, cf } = createContext();
+    cf.loadMetadata({ functions: [{ id: "ADD", parameters: [{ name: "a" }, { name: "b" }] }] });
     cf.associate("ADD", (a: number, b: number) => a + b);
     const range = context.workbook.worksheets.getActiveWorksheet().getRange("A1");
     range.formulas = [["=ADD(1, 2)"]];
@@ -50,6 +51,7 @@ describe("MockRequestContext", () => {
 
   test("sync evaluates async custom functions", async () => {
     const { context, storage, cf } = createContext();
+    cf.loadMetadata({ functions: [{ id: "ASYNC_ADD", parameters: [{ name: "a" }, { name: "b" }] }] });
     cf.associate("ASYNC_ADD", async (a: number, b: number) => a + b);
     const range = context.workbook.worksheets.getActiveWorksheet().getRange("A1");
     range.formulas = [["=ASYNC_ADD(10, 20)"]];
@@ -68,6 +70,7 @@ describe("MockRequestContext", () => {
   test("formula evaluation passes Invocation with address and functionName", async () => {
     const { context, cf } = createContext();
     let receivedInvocation: unknown;
+    cf.loadMetadata({ functions: [{ id: "CAPTURE", parameters: [] }] });
     cf.associate("CAPTURE", (...args: unknown[]) => {
       receivedInvocation = args[args.length - 1];
       return 0;
@@ -80,6 +83,7 @@ describe("MockRequestContext", () => {
 
   test("spilling formula writes to multiple cells", async () => {
     const { context, storage, cf } = createContext();
+    cf.loadMetadata({ functions: [{ id: "MATRIX", parameters: [] }] });
     cf.associate("MATRIX", () => [[1, 2], [3, 4]]);
     const range = context.workbook.worksheets.getActiveWorksheet().getRange("B2");
     range.formulas = [["=MATRIX()"]];
@@ -92,6 +96,7 @@ describe("MockRequestContext", () => {
 
   test("write then read in same run works after sync", async () => {
     const { context, cf } = createContext();
+    cf.loadMetadata({ functions: [{ id: "DOUBLE", parameters: [{ name: "n" }] }] });
     cf.associate("DOUBLE", (n: number) => n * 2);
     const sheet = context.workbook.worksheets.getActiveWorksheet();
     const writeRange = sheet.getRange("A1");
