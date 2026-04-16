@@ -116,6 +116,22 @@ test("quoted numeric string argument is preserved as string", async ({
   expect(result).toBe("string:2023");
 });
 
+test("quoted string argument after comma has no leading space", async ({
+  page,
+}) => {
+  const result = await page.evaluate(async () => {
+    const MockOfficeJs = (window as any).MockOfficeJs;
+    const CustomFunctions = (window as any).CustomFunctions;
+
+    CustomFunctions.associate("JOIN", (a: any, b: any) => a + ":" + b);
+
+    await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: '=JOIN(1, "hello")' });
+    return MockOfficeJs.excel.getCell("Sheet1", "A1").value;
+  });
+
+  expect(result).toBe("1:hello");
+});
+
 test("MockOfficeJs.reset() clears cell values", async ({ page }) => {
   await page.evaluate(async () => {
     const MockOfficeJs = (window as any).MockOfficeJs;

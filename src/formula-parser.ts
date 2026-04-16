@@ -40,7 +40,7 @@ function parseArgs(argsString: string): unknown[] {
       i++;
       continue;
     }
-    if (char === '"') { inString = true; wasQuoted = true; i++; continue; }
+    if (char === '"') { inString = true; wasQuoted = true; current = current.trimStart(); i++; continue; }
     if (char === ",") { args.push(wasQuoted ? current : parseArgValue(current.trim())); current = ""; wasQuoted = false; i++; continue; }
     current += char;
     i++;

@@ -38,4 +38,13 @@ describe("parseFormula", () => {
   test("preserves empty quoted string", () => {
     expect(parseFormula('=FUNC("")')).toEqual({ functionName: "FUNC", args: [""] });
   });
+  test("quoted string after numeric arg has no leading space", () => {
+    expect(parseFormula('=FUNC(1, "hello")')).toEqual({ functionName: "FUNC", args: [1, "hello"] });
+  });
+  test("consecutive quoted strings have no leading space", () => {
+    expect(parseFormula('=FUNC("a", "b")')).toEqual({ functionName: "FUNC", args: ["a", "b"] });
+  });
+  test("multiple quoted strings after comma have no leading space", () => {
+    expect(parseFormula('=FUNC(1, "hello", "world")')).toEqual({ functionName: "FUNC", args: [1, "hello", "world"] });
+  });
 });
