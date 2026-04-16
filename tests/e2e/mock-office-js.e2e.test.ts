@@ -49,6 +49,7 @@ test("CustomFunctions.associate registers functions and formulas evaluate", asyn
     const MockOfficeJs = (window as any).MockOfficeJs;
     const CustomFunctions = (window as any).CustomFunctions;
 
+    CustomFunctions.loadMetadata({ functions: [{ id: "ADD", parameters: [{ name: "a" }, { name: "b" }] }] });
     CustomFunctions.associate("ADD", (a: number, b: number) => a + b);
 
     await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: "=ADD(2, 3)" });
@@ -107,6 +108,7 @@ test("quoted numeric string argument is preserved as string", async ({
     const MockOfficeJs = (window as any).MockOfficeJs;
     const CustomFunctions = (window as any).CustomFunctions;
 
+    CustomFunctions.loadMetadata({ functions: [{ id: "ECHO", parameters: [{ name: "val" }] }] });
     CustomFunctions.associate("ECHO", (val: any) => typeof val + ":" + val);
 
     await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: '=ECHO("2023")' });
@@ -123,6 +125,7 @@ test("quoted string argument after comma has no leading space", async ({
     const MockOfficeJs = (window as any).MockOfficeJs;
     const CustomFunctions = (window as any).CustomFunctions;
 
+    CustomFunctions.loadMetadata({ functions: [{ id: "JOIN", parameters: [{ name: "a" }, { name: "b" }] }] });
     CustomFunctions.associate("JOIN", (a: any, b: any) => a + ":" + b);
 
     await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: '=JOIN(1, "hello")' });
@@ -142,11 +145,26 @@ test("unregistered function formula produces #NAME? error", async ({ page }) => 
   expect(result).toBe("#NAME?");
 });
 
+test("associated function without metadata produces #NAME? error", async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const MockOfficeJs = (window as any).MockOfficeJs;
+    const CustomFunctions = (window as any).CustomFunctions;
+
+    CustomFunctions.associate("ADD", (a: number, b: number) => a + b);
+
+    await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: "=ADD(1, 2)" });
+    return MockOfficeJs.excel.getCell("Sheet1", "A1").value;
+  });
+
+  expect(result).toBe("#NAME?");
+});
+
 test("throwing function produces #VALUE! error", async ({ page }) => {
   const result = await page.evaluate(async () => {
     const MockOfficeJs = (window as any).MockOfficeJs;
     const CustomFunctions = (window as any).CustomFunctions;
 
+    CustomFunctions.loadMetadata({ functions: [{ id: "FAIL", parameters: [] }] });
     CustomFunctions.associate("FAIL", () => { throw new Error("boom"); });
 
     await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: "=FAIL()" });
@@ -161,6 +179,7 @@ test("function returning 2D array spills to adjacent cells", async ({ page }) =>
     const MockOfficeJs = (window as any).MockOfficeJs;
     const CustomFunctions = (window as any).CustomFunctions;
 
+    CustomFunctions.loadMetadata({ functions: [{ id: "MATRIX", parameters: [] }] });
     CustomFunctions.associate("MATRIX", () => [[1, 2], [3, 4]]);
 
     await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: "=MATRIX()" });
@@ -180,6 +199,7 @@ test("async custom function evaluates correctly", async ({ page }) => {
     const MockOfficeJs = (window as any).MockOfficeJs;
     const CustomFunctions = (window as any).CustomFunctions;
 
+    CustomFunctions.loadMetadata({ functions: [{ id: "ASYNC_ADD", parameters: [{ name: "a" }, { name: "b" }] }] });
     CustomFunctions.associate("ASYNC_ADD", async (a: number, b: number) => a + b);
 
     await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: "=ASYNC_ADD(10, 20)" });
