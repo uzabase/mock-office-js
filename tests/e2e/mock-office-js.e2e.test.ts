@@ -132,6 +132,63 @@ test("quoted string argument after comma has no leading space", async ({
   expect(result).toBe("1:hello");
 });
 
+test("unregistered function formula produces #NAME? error", async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const MockOfficeJs = (window as any).MockOfficeJs;
+    await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: "=UNKNOWN_FUNC(1)" });
+    return MockOfficeJs.excel.getCell("Sheet1", "A1").value;
+  });
+
+  expect(result).toBe("#NAME?");
+});
+
+test("throwing function produces #VALUE! error", async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const MockOfficeJs = (window as any).MockOfficeJs;
+    const CustomFunctions = (window as any).CustomFunctions;
+
+    CustomFunctions.associate("FAIL", () => { throw new Error("boom"); });
+
+    await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: "=FAIL()" });
+    return MockOfficeJs.excel.getCell("Sheet1", "A1").value;
+  });
+
+  expect(result).toBe("#VALUE!");
+});
+
+test("function returning 2D array spills to adjacent cells", async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const MockOfficeJs = (window as any).MockOfficeJs;
+    const CustomFunctions = (window as any).CustomFunctions;
+
+    CustomFunctions.associate("MATRIX", () => [[1, 2], [3, 4]]);
+
+    await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: "=MATRIX()" });
+    return {
+      a1: MockOfficeJs.excel.getCell("Sheet1", "A1").value,
+      b1: MockOfficeJs.excel.getCell("Sheet1", "B1").value,
+      a2: MockOfficeJs.excel.getCell("Sheet1", "A2").value,
+      b2: MockOfficeJs.excel.getCell("Sheet1", "B2").value,
+    };
+  });
+
+  expect(result).toEqual({ a1: 1, b1: 2, a2: 3, b2: 4 });
+});
+
+test("async custom function evaluates correctly", async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const MockOfficeJs = (window as any).MockOfficeJs;
+    const CustomFunctions = (window as any).CustomFunctions;
+
+    CustomFunctions.associate("ASYNC_ADD", async (a: number, b: number) => a + b);
+
+    await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: "=ASYNC_ADD(10, 20)" });
+    return MockOfficeJs.excel.getCell("Sheet1", "A1").value;
+  });
+
+  expect(result).toBe(30);
+});
+
 test("MockOfficeJs.reset() clears cell values", async ({ page }) => {
   await page.evaluate(async () => {
     const MockOfficeJs = (window as any).MockOfficeJs;
