@@ -25,6 +25,7 @@ describe("mockOfficeJs.excel", () => {
 
   test("setCell with formula evaluates custom function", async () => {
     const { customFunctions, mockOfficeJs } = createMockEnvironment();
+    customFunctions.loadMetadata({ functions: [{ id: "ADD", parameters: [{ name: "a" }, { name: "b" }] }] });
     customFunctions.associate("ADD", (a: number, b: number) => a + b);
     await mockOfficeJs.excel.setCell("Sheet1", "A1", { formula: "=ADD(1, 2)" });
     expect(mockOfficeJs.excel.getCell("Sheet1", "A1").value).toBe(3);
@@ -58,6 +59,7 @@ describe("mockOfficeJs.excel", () => {
 
   test("setSelectedRange is used by Excel.run", async () => {
     const { excel, customFunctions, mockOfficeJs } = createMockEnvironment();
+    customFunctions.loadMetadata({ functions: [{ id: "DOUBLE", parameters: [{ name: "n" }] }] });
     customFunctions.associate("DOUBLE", (n: number) => n * 2);
     mockOfficeJs.excel.setCell("Sheet1", "A1", 5);
     mockOfficeJs.excel.setSelectedRange("Sheet1", "B1");
@@ -92,6 +94,7 @@ describe("mockOfficeJs.excel", () => {
 
   test("spill collision returns #SPILL!", async () => {
     const { customFunctions, mockOfficeJs } = createMockEnvironment();
+    customFunctions.loadMetadata({ functions: [{ id: "MATRIX", parameters: [] }] });
     customFunctions.associate("MATRIX", () => [[1, 2], [3, 4]]);
     mockOfficeJs.excel.setCell("Sheet1", "C2", 999);
     await mockOfficeJs.excel.setCell("Sheet1", "B2", { formula: "=MATRIX()" });
@@ -100,6 +103,7 @@ describe("mockOfficeJs.excel", () => {
 
   test("function name lookup is case-insensitive", async () => {
     const { customFunctions, mockOfficeJs } = createMockEnvironment();
+    customFunctions.loadMetadata({ functions: [{ id: "ADD", parameters: [{ name: "a" }, { name: "b" }] }] });
     customFunctions.associate("ADD", (a: number, b: number) => a + b);
     await mockOfficeJs.excel.setCell("Sheet1", "A1", { formula: "=add(1, 2)" });
     expect(mockOfficeJs.excel.getCell("Sheet1", "A1").value).toBe(3);
@@ -120,6 +124,7 @@ describe("Excel.run shared state", () => {
 
   test("Excel.run formula write evaluates custom function", async () => {
     const { excel, customFunctions, mockOfficeJs } = createMockEnvironment();
+    customFunctions.loadMetadata({ functions: [{ id: "DOUBLE", parameters: [{ name: "n" }] }] });
     customFunctions.associate("DOUBLE", (n: number) => n * 2);
     await excel.run(async (context: any) => {
       const range = context.workbook.worksheets.getActiveWorksheet().getRange("A1");
