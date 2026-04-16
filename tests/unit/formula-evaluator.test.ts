@@ -11,8 +11,14 @@ describe("FormulaEvaluator", () => {
     return { evaluator, storage, cf };
   }
 
+  function withMetadata(cf: MockCustomFunctions, id: string, paramCount: number) {
+    const parameters = Array.from({ length: paramCount }, (_, i) => ({ name: `p${i}` }));
+    cf.loadMetadata({ functions: [{ id, parameters }] });
+  }
+
   test("evaluates registered function and stores result", async () => {
     const { evaluator, storage, cf } = createEvaluator();
+    withMetadata(cf, "ADD", 2);
     cf.associate("ADD", (a: number, b: number) => a + b);
     await evaluator.evaluateAndStore("Sheet1", "A1", "=ADD(1, 2)");
     expect(storage.getCell("Sheet1", "A1").value).toBe(3);
@@ -27,6 +33,7 @@ describe("FormulaEvaluator", () => {
 
   test("handles async functions", async () => {
     const { evaluator, storage, cf } = createEvaluator();
+    withMetadata(cf, "ASYNC_ADD", 2);
     cf.associate("ASYNC_ADD", async (a: number, b: number) => a + b);
     await evaluator.evaluateAndStore("Sheet1", "A1", "=ASYNC_ADD(10, 20)");
     expect(storage.getCell("Sheet1", "A1").value).toBe(30);
@@ -34,6 +41,7 @@ describe("FormulaEvaluator", () => {
 
   test("passes Invocation with address and functionName", async () => {
     const { evaluator, cf } = createEvaluator();
+    withMetadata(cf, "CAPTURE", 0);
     let receivedInvocation: unknown;
     cf.associate("CAPTURE", (...args: unknown[]) => {
       receivedInvocation = args[args.length - 1];
@@ -45,6 +53,7 @@ describe("FormulaEvaluator", () => {
 
   test("spills 2D array result to adjacent cells", async () => {
     const { evaluator, storage, cf } = createEvaluator();
+    withMetadata(cf, "MATRIX", 0);
     cf.associate("MATRIX", () => [[1, 2], [3, 4]]);
     await evaluator.evaluateAndStore("Sheet1", "B2", "=MATRIX()");
     expect(storage.getCell("Sheet1", "B2").value).toBe(1);
@@ -55,6 +64,7 @@ describe("FormulaEvaluator", () => {
 
   test("stores #VALUE! when function throws", async () => {
     const { evaluator, storage, cf } = createEvaluator();
+    withMetadata(cf, "FAIL", 0);
     cf.associate("FAIL", () => { throw new Error("boom"); });
     await evaluator.evaluateAndStore("Sheet1", "A1", "=FAIL()");
     expect(storage.getCell("Sheet1", "A1").value).toBe("#VALUE!");
@@ -199,6 +209,7 @@ describe("FormulaEvaluator", () => {
 
   test("lowercase function name resolves correctly", async () => {
     const { evaluator, storage, cf } = createEvaluator();
+    withMetadata(cf, "ADD", 2);
     cf.associate("ADD", (a: number, b: number) => a + b);
     await evaluator.evaluateAndStore("Sheet1", "A1", "=add(1, 2)");
     expect(storage.getCell("Sheet1", "A1").value).toBe(3);
@@ -206,6 +217,7 @@ describe("FormulaEvaluator", () => {
 
   test("namespaced function evaluates correctly", async () => {
     const { evaluator, storage, cf } = createEvaluator();
+    withMetadata(cf, "CONTOSO.ADD", 2);
     cf.associate("CONTOSO.ADD", (a: number, b: number) => a + b);
     await evaluator.evaluateAndStore("Sheet1", "A1", "=CONTOSO.ADD(1, 2)");
     expect(storage.getCell("Sheet1", "A1").value).toBe(3);
@@ -214,6 +226,7 @@ describe("FormulaEvaluator", () => {
 
   test("string argument is passed to function as string", async () => {
     const { evaluator, storage, cf } = createEvaluator();
+    withMetadata(cf, "ECHO", 1);
     let receivedArg: unknown;
     cf.associate("ECHO", (val: unknown) => {
       receivedArg = val;
@@ -226,6 +239,7 @@ describe("FormulaEvaluator", () => {
 
   test("boolean argument is passed to function as boolean", async () => {
     const { evaluator, storage, cf } = createEvaluator();
+    withMetadata(cf, "ECHO", 1);
     let receivedArg: unknown;
     cf.associate("ECHO", (val: unknown) => {
       receivedArg = val;
@@ -238,6 +252,7 @@ describe("FormulaEvaluator", () => {
 
   test("function returning string stores string value", async () => {
     const { evaluator, storage, cf } = createEvaluator();
+    withMetadata(cf, "GREET", 1);
     cf.associate("GREET", (name: string) => "hello " + name);
     await evaluator.evaluateAndStore("Sheet1", "A1", '=GREET("world")');
     expect(storage.getCell("Sheet1", "A1").value).toBe("hello world");
@@ -245,6 +260,7 @@ describe("FormulaEvaluator", () => {
 
   test("async function that throws stores #VALUE!", async () => {
     const { evaluator, storage, cf } = createEvaluator();
+    withMetadata(cf, "ASYNC_FAIL", 0);
     cf.associate("ASYNC_FAIL", async () => { throw new Error("async boom"); });
     await evaluator.evaluateAndStore("Sheet1", "A1", "=ASYNC_FAIL()");
     expect(storage.getCell("Sheet1", "A1").value).toBe("#VALUE!");
