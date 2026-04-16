@@ -2,9 +2,15 @@ import { describe, expect, test, afterEach } from "vitest";
 import "../../src/index.js";
 
 describe("E2E integration", () => {
+  function loadMetadata(id: string, paramCount: number) {
+    const parameters = Array.from({ length: paramCount }, (_, i) => ({ name: `p${i}` }));
+    (CustomFunctions as any).loadMetadata({ functions: [{ id, parameters }] });
+  }
+
   afterEach(() => MockOfficeJs.reset());
 
   test("full flow: register function, write formula via Excel.run, verify value", async () => {
+    loadMetadata("TRIPLE", 1);
     CustomFunctions.associate("TRIPLE", (n: number) => n * 3);
     MockOfficeJs.excel.setCell("Sheet1", "A1", 7);
     MockOfficeJs.excel.setSelectedRange("Sheet1", "B1");
@@ -32,6 +38,7 @@ describe("E2E integration", () => {
   });
 
   test("spill flow: function returns 2D array, verify all cells", async () => {
+    loadMetadata("TABLE", 0);
     CustomFunctions.associate("TABLE", () => [
       ["Name", "Score"],
       ["Alice", 95],
@@ -83,6 +90,7 @@ describe("E2E integration", () => {
   });
 
   test("namespaced custom function evaluates via setCell", async () => {
+    loadMetadata("CONTOSO.ADD", 2);
     CustomFunctions.associate("CONTOSO.ADD", (a: number, b: number) => a + b);
     await MockOfficeJs.excel.setCell("Sheet1", "A1", { formula: "=CONTOSO.ADD(10, 20)" });
 
@@ -96,6 +104,7 @@ describe("E2E integration", () => {
   });
 
   test("mixed argument types are passed correctly to custom function", async () => {
+    loadMetadata("MIXED", 3);
     let receivedArgs: unknown[] = [];
     CustomFunctions.associate("MIXED", (...args: unknown[]) => {
       receivedArgs = args.slice(0, -1); // exclude invocation
